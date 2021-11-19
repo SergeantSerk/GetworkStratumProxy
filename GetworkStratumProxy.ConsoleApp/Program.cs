@@ -280,9 +280,10 @@ namespace GetworkStratumProxy.ConsoleApp
                                 Error = null,
                                 Result = workAccepted
                             };
+                            ConsoleHelper.Log(endpoint, $"Solution found was {(workAccepted ? "accepted" : "rejected")}", workAccepted ? LogLevel.Success : LogLevel.Error);
 
                             responseContent = JsonSerializer.Serialize(submitWorkResponse);
-                            ConsoleHelper.Log(endpoint, "Acknowledging submitted hashrate", LogLevel.Information);
+                            ConsoleHelper.Log(endpoint, "Acknowledging submitted work", LogLevel.Information);
                         }
 
                         ConsoleHelper.Log(endpoint, $"(O) {responseContent}", LogLevel.Debug);
