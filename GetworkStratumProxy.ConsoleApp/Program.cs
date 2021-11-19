@@ -23,11 +23,13 @@ namespace GetworkStratumProxy.ConsoleApp
         [Option('r', "rpc", Required = true, HelpText = "RPC endpoint URI for the node to getWork from, such as http://127.0.0.1:8545/")]
         public Uri RpcUri { get; set; }
 
-        [Option('a', "address", Required = false, HelpText = "IP address to listen stratum requests from e.g. 0.0.0.0")]
-        public IPAddress IPAddress { get; set; }
+        public IPAddress StratumIPAddress => IPAddress.TryParse(StratumIPAddressString, out IPAddress address) ? address : IPAddress.Any;
+
+        [Option('a', "address", Required = false, Default = "0.0.0.0", HelpText = "IP address to listen stratum requests from e.g. 0.0.0.0")]
+        public string StratumIPAddressString { get; set; }
 
         [Option('p', "port", Required = false, Default = 3131, HelpText = "Port number to listen stratum requests from e.g. 3131")]
-        public int Port { get; set; }
+        public int StratumPort { get; set; }
     }
 
     public class Program
@@ -46,13 +48,10 @@ namespace GetworkStratumProxy.ConsoleApp
 
         private static async Task OptionParseOkAsync(Options options)
         {
-            // If null, set to any IP listen
-            options.IPAddress ??= IPAddress.Any;
-
             ConsoleHelper.IsVerbose = options.Verbose;
 
             Geth = new Web3Geth(options.RpcUri.AbsoluteUri);
-            StratumListener = new TcpListener(options.IPAddress, options.Port);
+            StratumListener = new TcpListener(options.StratumIPAddress, options.StratumPort);
 
             ConsoleHelper.Log("Timer", "Initialising getwork timer and handler", LogLevel.Information);
             int sleepPeriod = 500;
@@ -89,7 +88,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 }
             };
 
-            ConsoleHelper.Log("Stratum", $"Listening on {options.IPAddress}:{options.Port}", LogLevel.Information);
+            ConsoleHelper.Log("Stratum", $"Listening on {options.StratumIPAddress}:{options.StratumPort}", LogLevel.Information);
             StratumListener.Start();
 
             Console.CancelKeyPress += (o, e) =>
