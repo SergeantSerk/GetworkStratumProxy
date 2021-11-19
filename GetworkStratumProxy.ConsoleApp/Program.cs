@@ -26,7 +26,7 @@ namespace GetworkStratumProxy.ConsoleApp
         [Option('a', "address", Required = false, HelpText = "IP address to listen stratum requests from e.g. 0.0.0.0")]
         public IPAddress IPAddress { get; set; }
 
-        [Option('p', "port", Required = false, HelpText = "Port number to listen stratum requests from e.g. 0.0.0.0")]
+        [Option('p', "port", Required = false, Default = 3131, HelpText = "Port number to listen stratum requests from e.g. 3131")]
         public int Port { get; set; }
     }
 
@@ -46,18 +46,21 @@ namespace GetworkStratumProxy.ConsoleApp
 
         private static async Task OptionParseOkAsync(Options options)
         {
+            // If null, set to any IP listen
+            options.IPAddress ??= IPAddress.Any;
+
             ConsoleHelper.IsVerbose = options.Verbose;
 
             Geth = new Web3Geth(options.RpcUri.AbsoluteUri);
             StratumListener = new TcpListener(options.IPAddress, options.Port);
 
-            ConsoleHelper.Log("Timer", "Initialising getwork timer and handler...", LogLevel.Information);
+            ConsoleHelper.Log("Timer", "Initialising getwork timer and handler", LogLevel.Information);
             int sleepPeriod = 500;
             new Timer(sleepPeriod) { AutoReset = true, Enabled = true }.Elapsed += async (o, e) =>
             {
                 if (!IsRunning)
                 {
-                    ConsoleHelper.Log("Timer", "Disposing getWork loop...", LogLevel.Information);
+                    ConsoleHelper.Log("Timer", "Disposing getWork loop", LogLevel.Information);
                     (o as Timer).Dispose();
                 }
                 else if (!StratumClients.IsEmpty)
@@ -86,18 +89,18 @@ namespace GetworkStratumProxy.ConsoleApp
                 }
             };
 
-            ConsoleHelper.Log("Stratum", "Starting stratum server...", LogLevel.Information);
+            ConsoleHelper.Log("Stratum", $"Listening on {options.IPAddress}:{options.Port}", LogLevel.Information);
             StratumListener.Start();
 
             Console.CancelKeyPress += (o, e) =>
             {
                 e.Cancel = true;
-                ConsoleHelper.Log("Internal", $"Caught {e.SpecialKey}, stopping...", LogLevel.Information);
+                ConsoleHelper.Log("Internal", $"Caught {e.SpecialKey}, stopping", LogLevel.Information);
                 IsRunning = false;
                 Stop();
             };
 
-            ConsoleHelper.Log("Stratum", "Ready and waiting for new stratum clients.", LogLevel.Information);
+            ConsoleHelper.Log("Stratum", "Ready and waiting for new stratum clients", LogLevel.Information);
             while (IsRunning)
             {
                 StratumListener
@@ -111,7 +114,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 await Task.Delay(1000);
             }
 
-            ConsoleHelper.Log("Shutdown", "Exited gracefully.", LogLevel.Information);
+            ConsoleHelper.Log("Shutdown", "Exited gracefully", LogLevel.Information);
         }
 
         private static async void BeginAcceptStratumClientAsync(IAsyncResult ar)
@@ -154,7 +157,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 if (streamHandler.PreviousWork == null || !IsWorkSame(streamHandler.PreviousWork, workParams))
                 {
                     streamHandler.PreviousWork = workParams;
-                    ConsoleHelper.Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Building fresh getWork from node...", LogLevel.Information);
+                    ConsoleHelper.Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Building fresh getWork from node", LogLevel.Information);
                     var getworkResponse = new BaseResponse<string[]>
                     {
                         Id = 0,
@@ -235,7 +238,7 @@ namespace GetworkStratumProxy.ConsoleApp
                             ConsoleHelper.Log(endpoint, "Miner getwork", LogLevel.Information);
                             var getworkRequest = JsonSerializer.Deserialize<BaseRequest<object[]>>(requestContent);
 
-                            ConsoleHelper.Log("RPC", "Polling getWork from node...", LogLevel.Information);
+                            ConsoleHelper.Log("RPC", "Polling getwork from node", LogLevel.Information);
                             string[] workParams = await Geth.Eth.Mining.GetWork.SendRequestAsync();
                             var getworkResponse = new BaseResponse<string[]>
                             {
@@ -299,12 +302,12 @@ namespace GetworkStratumProxy.ConsoleApp
 
         private static void Stop()
         {
-            ConsoleHelper.Log("Shutdown", "Shutting down stratum server...", LogLevel.Information);
+            ConsoleHelper.Log("Shutdown", "Shutting down stratum server", LogLevel.Information);
             StratumListener.Stop();
             foreach (var stratumClient in StratumClients)
             {
                 stratumClient.Value.Dispose();
-                ConsoleHelper.Log("Shutdown", $"Disconnecting client {stratumClient.Key}...", LogLevel.Information);
+                ConsoleHelper.Log("Shutdown", $"Disconnecting client {stratumClient.Key}", LogLevel.Information);
             }
 
             IsEnded = true;
