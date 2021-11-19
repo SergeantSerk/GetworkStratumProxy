@@ -1,4 +1,5 @@
-﻿using GetworkStratumProxy.ConsoleApp.Extension;
+﻿using CommandLine;
+using GetworkStratumProxy.ConsoleApp.Extension;
 using GetworkStratumProxy.ConsoleApp.JsonRpc;
 using GetworkStratumProxy.ConsoleApp.JsonRpc.Eth;
 using Nethereum.Geth;
@@ -14,71 +15,61 @@ using System.Timers;
 
 namespace GetworkStratumProxy.ConsoleApp
 {
-    public class StreamHandler : IDisposable
+    public class Options
     {
-        public TcpClient TcpClient { get; set; }
-        public StreamReader StreamReader { get; set; }
-        public StreamWriter StreamWriter { get; set; }
+        [Option('v', "verbose", Required = false, HelpText = "Show more detailed and verbose output.")]
+        public bool Verbose { get; set; }
 
-        public bool MiningReady { get; set; }
-        public string[] PreviousWork { get; set; } = null;
+        [Option('r', "rpc", Required = true, HelpText = "RPC endpoint URI for the node to getWork from, such as http://127.0.0.1:8545/")]
+        public Uri RpcUri { get; set; }
 
-        public StreamHandler(TcpClient tcpClient, StreamReader streamReader, StreamWriter streamWriter)
-        {
-            TcpClient = tcpClient;
-            StreamReader = streamReader;
-            StreamWriter = streamWriter;
-        }
+        [Option('a', "address", Required = false, HelpText = "IP address to listen stratum requests from e.g. 0.0.0.0")]
+        public IPAddress IPAddress { get; set; }
 
-        public void Dispose()
-        {
-            StreamWriter.Dispose();
-            StreamReader.Dispose();
-            TcpClient.Dispose();
-        }
+        [Option('p', "port", Required = false, HelpText = "Port number to listen stratum requests from e.g. 0.0.0.0")]
+        public int Port { get; set; }
     }
 
-    public static class Program
+    public class Program
     {
         public static bool IsRunning { get; set; } = true;
         public static bool IsEnded { get; private set; } = false;
         public static IWeb3Geth Geth { get; private set; }
-        private static TcpListener StratumListener { get; } = new TcpListener(IPAddress.Any, 3131);
+        private static TcpListener StratumListener { get; set; }
         public static ConcurrentDictionary<EndPoint, StreamHandler> StratumClients { get; } = new ConcurrentDictionary<EndPoint, StreamHandler>();
 
         public static async Task Main(string[] args)
         {
-            if (args.Length < 1)
-            {
-                Console.WriteLine("Specify URI for RPC node e.g. http://127.0.0.1:8545/");
-                return;
-            }
+            await Parser.Default.ParseArguments<Options>(args)
+                .WithParsedAsync(OptionParseOkAsync);
+        }
 
-            var rpcUri = new Uri(args[^1]);
-            Geth = new Web3Geth(rpcUri.AbsoluteUri);
+        private static async Task OptionParseOkAsync(Options options)
+        {
+            ConsoleHelper.IsVerbose = options.Verbose;
+
+            Geth = new Web3Geth(options.RpcUri.AbsoluteUri);
+            StratumListener = new TcpListener(options.IPAddress, options.Port);
+
+            ConsoleHelper.Log("Timer", "Initialising getwork timer and handler...", LogLevel.Information);
             int sleepPeriod = 500;
-
-            Console.WriteLine("Initialising getwork timer and handler...");
             new Timer(sleepPeriod) { AutoReset = true, Enabled = true }.Elapsed += async (o, e) =>
             {
                 if (!IsRunning)
                 {
-                    Console.WriteLine("Disposing getwork loop...");
+                    ConsoleHelper.Log("Timer", "Disposing getWork loop...", LogLevel.Information);
                     (o as Timer).Dispose();
                 }
                 else if (!StratumClients.IsEmpty)
                 {
                     foreach (var stratumClient in StratumClients)
                     {
-                        var state = stratumClient.Value.TcpClient.GetState();
-                        if (state == TcpState.Closing ||
-                            state == TcpState.CloseWait ||
-                            state == TcpState.Closed)
+                        if (stratumClient.Value.TcpClient.IsDisconnected())
                         {
                             if (StratumClients.TryRemove(stratumClient))
                             {
                                 stratumClient.Value.Dispose();
-                                Log(stratumClient.Key, $"Client disconnected");
+                                ConsoleHelper.Log(stratumClient.Key, $"Client disconnected", LogLevel.Information);
                             }
                         }
                         else
@@ -95,18 +86,18 @@ namespace GetworkStratumProxy.ConsoleApp
                 }
             };
 
-            Console.WriteLine("Starting stratum server...");
+            ConsoleHelper.Log("Stratum", "Starting stratum server...", LogLevel.Information);
             StratumListener.Start();
 
             Console.CancelKeyPress += (o, e) =>
             {
                 e.Cancel = true;
-                Console.WriteLine($"Caught {e.SpecialKey}, stopping...");
+                ConsoleHelper.Log("Internal", $"Caught {e.SpecialKey}, stopping...", LogLevel.Information);
                 IsRunning = false;
                 Stop();
             };
 
-            Console.WriteLine("Ready and waiting for new stratum clients.");
+            ConsoleHelper.Log("Stratum", "Ready and waiting for new stratum clients.", LogLevel.Information);
             while (IsRunning)
             {
                 StratumListener
@@ -120,7 +111,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 await Task.Delay(1000);
             }
 
-            Console.WriteLine("Exited gracefully.");
+            ConsoleHelper.Log("Shutdown", "Exited gracefully.", LogLevel.Information);
         }
 
         private static async void BeginAcceptStratumClientAsync(IAsyncResult ar)
@@ -134,11 +125,12 @@ namespace GetworkStratumProxy.ConsoleApp
             catch (ObjectDisposedException)
             {
                 // Safely ignore disposed connections
+                ConsoleHelper.Log("Listener", "Could not accept connected, client was disposed", LogLevel.Warning);
             }
 
             if (client != null && !StratumClients.ContainsKey(client.Client.RemoteEndPoint))
             {
-                Log(client.Client.RemoteEndPoint, "Connected");
+                ConsoleHelper.Log(client.Client.RemoteEndPoint, "Connected", LogLevel.Information);
                 NetworkStream networkStream = client.GetStream();
 
                 if (!StratumClients.TryGetValue(client.Client.RemoteEndPoint, out StreamHandler streamHandler))
@@ -162,7 +154,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 if (streamHandler.PreviousWork == null || !IsWorkSame(streamHandler.PreviousWork, workParams))
                 {
                     streamHandler.PreviousWork = workParams;
-                    Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Building fresh getwork from node...");
+                    ConsoleHelper.Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Building fresh getWork from node...", LogLevel.Information);
                     var getworkResponse = new BaseResponse<string[]>
                     {
                         Id = 0,
@@ -172,8 +164,8 @@ namespace GetworkStratumProxy.ConsoleApp
                     };
 
                     string responseContentJson = JsonSerializer.Serialize(getworkResponse);
-                    Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Sending job");
-                    Log(streamHandler.TcpClient.Client.RemoteEndPoint, $"(O) {responseContentJson}");
+                    ConsoleHelper.Log(streamHandler.TcpClient.Client.RemoteEndPoint, "Sending job", LogLevel.Information);
+                    ConsoleHelper.Log(streamHandler.TcpClient.Client.RemoteEndPoint, $"(O) {responseContentJson}", LogLevel.Debug);
                     await streamHandler.StreamWriter.WriteLineAsync($"{responseContentJson}");
                     await streamHandler.StreamWriter.FlushAsync();
                 }
@@ -222,28 +214,28 @@ namespace GetworkStratumProxy.ConsoleApp
                     string requestContent = await streamHandler.StreamReader.ReadLineAsync();
                     if (!string.IsNullOrWhiteSpace(requestContent))
                     {
-                        Log(endpoint, $"(I) {requestContent}");
+                        ConsoleHelper.Log(endpoint, $"(I) {requestContent}", LogLevel.Debug);
                         BaseRequest<object> baseRequest = JsonSerializer.Deserialize<BaseRequest<object>>(requestContent);
 
                         string responseContent = null;
                         if (baseRequest.Method == "eth_submitLogin")
                         {
-                            Log(endpoint, "Miner login");
+                            ConsoleHelper.Log(endpoint, "Miner login", LogLevel.Information);
                             var loginRequest = JsonSerializer.Deserialize<EthSubmitLoginRequest>(requestContent);
 
-                            Log(endpoint, "Miner login successful");
+                            ConsoleHelper.Log(endpoint, "Miner login successful", LogLevel.Information);
                             var loginResponse = new EthSubmitLoginResponse(loginRequest, true);
                             responseContent = JsonSerializer.Serialize(loginResponse);
 
-                            Log(endpoint, "Sending login response");
+                            ConsoleHelper.Log(endpoint, "Sending login response", LogLevel.Information);
                             streamHandler.MiningReady = true;
                         }
                         else if (baseRequest.Method == "eth_getWork")
                         {
-                            Log(endpoint, "Miner getwork");
+                            ConsoleHelper.Log(endpoint, "Miner getwork", LogLevel.Information);
                             var getworkRequest = JsonSerializer.Deserialize<BaseRequest<object[]>>(requestContent);
 
-                            Console.WriteLine("Polling getwork from node...");
+                            ConsoleHelper.Log("RPC", "Polling getWork from node...", LogLevel.Information);
                             string[] workParams = await Geth.Eth.Mining.GetWork.SendRequestAsync();
                             var getworkResponse = new BaseResponse<string[]>
                             {
@@ -254,11 +246,11 @@ namespace GetworkStratumProxy.ConsoleApp
                             };
 
                             responseContent = JsonSerializer.Serialize(getworkResponse);
-                            Log(endpoint, "Sending job");
+                            ConsoleHelper.Log(endpoint, "Sending job", LogLevel.Information);
                         }
                         else if (baseRequest.Method == "eth_submitHashrate")
                         {
-                            Log(endpoint, "Miner hashrate submit");
+                            ConsoleHelper.Log(endpoint, "Miner hashrate submit", LogLevel.Information);
                             var submitHashrateRequest = JsonSerializer.Deserialize<BaseRequest<string[]>>(requestContent);
                             var submitHashrateResponse = new BaseResponse<bool>
                             {
@@ -269,11 +261,11 @@ namespace GetworkStratumProxy.ConsoleApp
                             };
 
                             responseContent = JsonSerializer.Serialize(submitHashrateResponse);
-                            Log(endpoint, "Acknowledging submitted hashrate");
+                            ConsoleHelper.Log(endpoint, "Acknowledging submitted hashrate", LogLevel.Information);
                         }
                         else if (baseRequest.Method == "eth_submitWork")
                         {
-                            Log(endpoint, "Miner submit work");
+                            ConsoleHelper.Log(endpoint, "Miner submit work", LogLevel.Information);
                             var submitWorkRequest = JsonSerializer.Deserialize<BaseRequest<string[]>>(requestContent);
 
                             string nonce = submitWorkRequest.Params[0], header = submitWorkRequest.Params[1], mix = submitWorkRequest.Params[2];
@@ -288,10 +280,10 @@ namespace GetworkStratumProxy.ConsoleApp
                             };
 
                             responseContent = JsonSerializer.Serialize(submitWorkResponse);
-                            Log(endpoint, "acknowledging submitted hashrate");
+                            ConsoleHelper.Log(endpoint, "Acknowledging submitted hashrate", LogLevel.Information);
                         }
 
-                        Log(endpoint, $"(O) {responseContent}");
+                        ConsoleHelper.Log(endpoint, $"(O) {responseContent}", LogLevel.Debug);
                         await streamHandler.StreamWriter.WriteLineAsync($"{responseContent}");
                         await streamHandler.StreamWriter.FlushAsync();
                     }
@@ -301,23 +293,18 @@ namespace GetworkStratumProxy.ConsoleApp
             if (StratumClients.TryRemove(endpoint, out StreamHandler streamHandlerToFinalise))
             {
                 streamHandlerToFinalise.Dispose();
-                Log(endpoint, $"Client disconnected");
+                ConsoleHelper.Log(endpoint, $"Client disconnected", LogLevel.Information);
             }
-        }
-
-        private static void Log(EndPoint endpoint, string message)
-        {
-            Console.WriteLine($"[{endpoint,-15}] {message}");
         }
 
         private static void Stop()
         {
-            Console.WriteLine("Shutting down stratum server...");
+            ConsoleHelper.Log("Shutdown", "Shutting down stratum server...", LogLevel.Information);
             StratumListener.Stop();
             foreach (var stratumClient in StratumClients)
             {
                 stratumClient.Value.Dispose();
-                Console.WriteLine($"Disconnecting client {stratumClient.Key}...");
+                ConsoleHelper.Log("Shutdown", $"Disconnecting client {stratumClient.Key}...", LogLevel.Information);
             }
 
             IsEnded = true;

@@ -15,5 +15,11 @@ namespace GetworkStratumProxy.ConsoleApp.Extension
 
             return tcpConnection != null ? tcpConnection.State : TcpState.Unknown;
         }
+
+        public static bool IsDisconnected(this TcpClient tcpClient)
+        {
+            TcpState state = tcpClient.GetState();
+            return state == TcpState.Closing || state == TcpState.CloseWait || state == TcpState.Closed;
+        }
     }
 }
