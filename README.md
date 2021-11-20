@@ -23,3 +23,13 @@
   
  ## Binaries
  Currently, no binaries are built and added to [releases](https://github.com/SergeantSerk/GetworkStratumProxy/releases) yet. As such, you have to clone this repository and build it yourself. See **Source**.
+
+# Contribute
+Pleae submit any issues when using **GSP** in order to improve it (such as uncaught exceptions, communication issues).
+You can contribute to this repository as need be under [licence](LICENSE).
+ 
+# Donations
+Thank you for considering donations, they are always welcome and definitely not necessary.
+
+- `ETH`: `0x6Ce7022F469646F2C5B8eD8c659338CB53F42863`
+- `XLM`: `GD3ZLSKYOP3TKUSHBJEFZAJK53GIZQFZUXQYQENAY62QAILHOM75RH7C`
