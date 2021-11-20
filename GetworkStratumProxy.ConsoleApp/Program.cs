@@ -165,16 +165,10 @@ namespace GetworkStratumProxy.ConsoleApp
             EndPoint endpoint = stratumClient.TcpClient.Client.RemoteEndPoint;
             bool validRequestResponse = true;
 
-            TcpState state;
             bool disconnected;
             do
             {
-                state = stratumClient.TcpClient.GetState();
-                disconnected =
-                    state == TcpState.Closing ||
-                    state == TcpState.CloseWait ||
-                    state == TcpState.Closed;
-
+                disconnected = stratumClient.TcpClient.IsDisconnected();
                 if (!disconnected)
                 {
                     string requestContent = await stratumClient.StreamReader.ReadLineAsync();
@@ -189,6 +183,7 @@ namespace GetworkStratumProxy.ConsoleApp
                             ConsoleHelper.Log(endpoint, "Miner login", LogLevel.Information);
                             var loginRequest = JsonSerializer.Deserialize<EthSubmitLoginRequest>(requestContent);
 
+                            // Ignore login, return login success
                             ConsoleHelper.Log(endpoint, "Miner login successful", LogLevel.Information);
                             var loginResponse = new EthSubmitLoginResponse(loginRequest, true);
                             responseContent = JsonSerializer.Serialize(loginResponse);
@@ -246,6 +241,10 @@ namespace GetworkStratumProxy.ConsoleApp
 
                             responseContent = JsonSerializer.Serialize(submitWorkResponse);
                             ConsoleHelper.Log(endpoint, "Acknowledging submitted work", LogLevel.Information);
+                        }
+                        else
+                        {
+                            ConsoleHelper.Log(endpoint, $"Unhandled method {baseRequest.Method} from client", LogLevel.Warning);
                         }
 
                         ConsoleHelper.Log(endpoint, $"(O) {responseContent}", LogLevel.Debug);
