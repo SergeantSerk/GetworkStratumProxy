@@ -1,7 +1,8 @@
 ﻿using CommandLine;
 using GetworkStratumProxy.ConsoleApp.Extension;
-using GetworkStratumProxy.ConsoleApp.JsonRpc;
-using GetworkStratumProxy.ConsoleApp.JsonRpc.Eth;
+using GetworkStratumProxy.Extension;
+using GetworkStratumProxy.JsonRpc;
+using GetworkStratumProxy.JsonRpc.Eth;
 using Nethereum.Geth;
 using System;
 using System.Collections.Concurrent;
@@ -38,7 +39,7 @@ namespace GetworkStratumProxy.ConsoleApp
         public static bool IsEnded { get; private set; } = false;
         public static IWeb3Geth Geth { get; private set; }
         private static TcpListener StratumListener { get; set; }
-        public static ConcurrentDictionary<EndPoint, StreamHandler> StratumClients { get; } = new ConcurrentDictionary<EndPoint, StreamHandler>();
+        public static ConcurrentDictionary<EndPoint, StratumClient> StratumClients { get; } = new ConcurrentDictionary<EndPoint, StratumClient>();
 
         public static async Task Main(string[] args)
         {
@@ -135,12 +136,12 @@ namespace GetworkStratumProxy.ConsoleApp
                 ConsoleHelper.Log(client.Client.RemoteEndPoint, "Connected", LogLevel.Information);
                 NetworkStream networkStream = client.GetStream();
 
-                if (!StratumClients.TryGetValue(client.Client.RemoteEndPoint, out StreamHandler streamHandler))
+                if (!StratumClients.TryGetValue(client.Client.RemoteEndPoint, out StratumClient streamHandler))
                 {
                     // Add StreamHandler to ConcurrentDictionary, if it does not exist
                     var streamReader = new StreamReader(networkStream);
                     var streamWriter = new StreamWriter(networkStream);
-                    streamHandler = new StreamHandler(client, streamReader, streamWriter);
+                    streamHandler = new StratumClient(client, streamReader, streamWriter);
                     StratumClients.TryAdd(client.Client.RemoteEndPoint, streamHandler);
                 }
 
@@ -148,7 +149,7 @@ namespace GetworkStratumProxy.ConsoleApp
             }
         }
 
-        private static async Task SendJobToClientAsync(StreamHandler streamHandler)
+        private static async Task SendJobToClientAsync(StratumClient streamHandler)
         {
             if (streamHandler.MiningReady)
             {
@@ -196,7 +197,7 @@ namespace GetworkStratumProxy.ConsoleApp
             return true;
         }
 
-        private static async Task ProcessStratumClientAsync(StreamHandler streamHandler)
+        private static async Task ProcessStratumClientAsync(StratumClient streamHandler)
         {
             EndPoint endpoint = streamHandler.TcpClient.Client.RemoteEndPoint;
             bool validRequestResponse = true;
@@ -293,7 +294,7 @@ namespace GetworkStratumProxy.ConsoleApp
                 }
             } while (validRequestResponse && !disconnected);
 
-            if (StratumClients.TryRemove(endpoint, out StreamHandler streamHandlerToFinalise))
+            if (StratumClients.TryRemove(endpoint, out StratumClient streamHandlerToFinalise))
             {
                 streamHandlerToFinalise.Dispose();
                 ConsoleHelper.Log(endpoint, $"Client disconnected", LogLevel.Information);

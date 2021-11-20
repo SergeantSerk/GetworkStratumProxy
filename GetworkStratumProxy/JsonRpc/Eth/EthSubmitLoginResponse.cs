@@ -1,6 +1,6 @@
-﻿namespace GetworkStratumProxy.ConsoleApp.JsonRpc.Eth
+﻿namespace GetworkStratumProxy.JsonRpc.Eth
 {
-    internal class EthSubmitLoginResponse : BaseResponse<bool>
+    public class EthSubmitLoginResponse : BaseResponse<bool>
     {
         public EthSubmitLoginResponse(EthSubmitLoginRequest loginRequest, bool success)
         {

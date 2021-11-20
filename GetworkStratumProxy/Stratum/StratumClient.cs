@@ -2,9 +2,9 @@
 using System.IO;
 using System.Net.Sockets;
 
-namespace GetworkStratumProxy.ConsoleApp
+namespace GetworkStratumProxy
 {
-    public class StreamHandler : IDisposable
+    public class StratumClient : IDisposable
     {
         private bool disposedValue;
 
@@ -15,7 +15,7 @@ namespace GetworkStratumProxy.ConsoleApp
         public bool MiningReady { get; set; }
         public string[] PreviousWork { get; set; } = null;
 
-        public StreamHandler(TcpClient tcpClient, StreamReader streamReader, StreamWriter streamWriter)
+        public StratumClient(TcpClient tcpClient, StreamReader streamReader, StreamWriter streamWriter)
         {
             TcpClient = tcpClient;
             StreamReader = streamReader;

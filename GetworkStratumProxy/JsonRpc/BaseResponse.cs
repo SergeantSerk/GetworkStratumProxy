@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace GetworkStratumProxy.ConsoleApp.JsonRpc
+namespace GetworkStratumProxy.JsonRpc
 {
-    internal class BaseResponse<T> : BaseJsonRpc
+    public class BaseResponse<T> : BaseJsonRpc
     {
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; }
@@ -19,7 +19,7 @@ namespace GetworkStratumProxy.ConsoleApp.JsonRpc
         }
     }
 
-    internal class Error
+    public class Error
     {
         [JsonPropertyName("code")]
         public int Code { get; set; }

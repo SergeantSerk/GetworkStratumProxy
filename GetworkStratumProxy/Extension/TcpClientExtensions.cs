@@ -2,9 +2,9 @@
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace GetworkStratumProxy.ConsoleApp.Extension
+namespace GetworkStratumProxy.Extension
 {
-    internal static class TcpClientExtensions
+    public static class TcpClientExtensions
     {
         public static TcpState GetState(this TcpClient tcpClient)
         {

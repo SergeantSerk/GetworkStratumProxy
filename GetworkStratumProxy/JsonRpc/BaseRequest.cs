@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace GetworkStratumProxy.ConsoleApp.JsonRpc
+namespace GetworkStratumProxy.JsonRpc
 {
-    internal class BaseRequest<T> : BaseJsonRpc
+    public class BaseRequest<T> : BaseJsonRpc
     {
         [JsonPropertyName("method")]
         public string Method { get; set; }
