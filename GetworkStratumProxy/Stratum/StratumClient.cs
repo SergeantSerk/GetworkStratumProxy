@@ -8,18 +8,37 @@ namespace GetworkStratumProxy
     {
         private bool disposedValue;
 
-        public TcpClient TcpClient { get; set; }
-        public StreamReader StreamReader { get; set; }
-        public StreamWriter StreamWriter { get; set; }
+        public TcpClient TcpClient { get; private set; }
+        public StreamReader StreamReader { get; private set; }
+        public StreamWriter StreamWriter { get; private set; }
 
         public bool MiningReady { get; set; }
         public string[] PreviousWork { get; set; } = null;
 
-        public StratumClient(TcpClient tcpClient, StreamReader streamReader, StreamWriter streamWriter)
+        public StratumClient(TcpClient tcpClient)
         {
             TcpClient = tcpClient;
-            StreamReader = streamReader;
-            StreamWriter = streamWriter;
+            var networkStream = TcpClient.GetStream();
+            StreamReader = new StreamReader(networkStream);
+            StreamWriter = new StreamWriter(networkStream);
+        }
+
+        public bool IsSameWork(string[] currentWork)
+        {
+            if (PreviousWork.Length != currentWork.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < PreviousWork.Length; ++i)
+            {
+                if (PreviousWork[i] != currentWork[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         protected virtual void Dispose(bool disposing)
