@@ -1,7 +1,7 @@
 # GetworkStratumProxy
- GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on getwork-based servers (like solo-mining).
+ GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on getWork-based servers.
 
- **GSP** is specifically for Stratum clients (such as TeamRedMiner, PhoenixMiner or any stratum-capable miner) to GetWork servers only. The motive behind developing this was to use third-party miners to solo mine cryptocurrencies (instead of using ethminer which supported getwork connections).
+ **GSP** is specifically for Stratum clients (such as TeamRedMiner, PhoenixMiner or any stratum-capable miner) to getWork-only servers. The motive behind developing this was to use third-party miners to solo mine cryptocurrencies (instead of using ethminer which supported getWork connections).
 
  Currently, **GSP** is tested to work with a private Ethereum network, setup with `puppeth` and mined up to a canonical chain (chain with consensus achieved). Nothing is changed with the jobs sent and received by **GSP**, only that whatever is sent and received to it is relayed to the opposite side.
  
