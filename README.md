@@ -1,5 +1,7 @@
 # GetworkStratumProxy
- GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on getWork-based servers.
+[![Build status](https://ci.appveyor.com/api/projects/status/tly2i35nasi54whm?svg=true)](https://ci.appveyor.com/project/SergeantSerk/getworkstratumproxy)
+
+GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on getWork-based servers.
 
  **GSP** is specifically for Stratum clients (such as TeamRedMiner, PhoenixMiner or any stratum-capable miner) to getWork-only servers. The motive behind developing this was to use third-party miners to solo mine cryptocurrencies (instead of using ethminer which supported getWork connections).
 
@@ -32,4 +34,6 @@ You can contribute to this repository as need be under [licence](LICENSE).
 Thank you for considering donations, they are always welcome and definitely not necessary.
 
 - `ETH`: `0x6Ce7022F469646F2C5B8eD8c659338CB53F42863`
+- `CLO`: `0x6Ce7022F469646F2C5B8eD8c659338CB53F42863`
 - `XLM`: `GD3ZLSKYOP3TKUSHBJEFZAJK53GIZQFZUXQYQENAY62QAILHOM75RH7C`
+- `ZIL`: `zil12tdr86qjhzj002kmthgwssjndru9cunm75ane5`
