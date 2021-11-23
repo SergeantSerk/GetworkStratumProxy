@@ -72,7 +72,7 @@ namespace GetworkStratumProxy.ConsoleApp
             };
 
             ConsoleHelper.Log("Stratum", $"Listening on {options.StratumIPAddress}:{options.StratumPort}", LogLevel.Information);
-            RpcStratumProxy.StratumListener.TcpListener.Start();
+            RpcStratumProxy.StratumListener.Start();
 
             Console.CancelKeyPress += (o, e) =>
             {
@@ -87,8 +87,7 @@ namespace GetworkStratumProxy.ConsoleApp
             {
                 RpcStratumProxy
                     .StratumListener
-                    .TcpListener
-                    .BeginAcceptTcpClient(BeginAcceptStratumClientAsync, RpcStratumProxy.StratumListener.TcpListener)
+                    .BeginAcceptTcpClient(BeginAcceptStratumClientAsync, RpcStratumProxy.StratumListener)
                     .AsyncWaitHandle
                     .WaitOne(); // Do not infinitely spawn listen threads
             }
@@ -264,7 +263,7 @@ namespace GetworkStratumProxy.ConsoleApp
         private static void Stop()
         {
             ConsoleHelper.Log("Shutdown", "Shutting down stratum server", LogLevel.Information);
-            RpcStratumProxy.StratumListener.TcpListener.Stop();
+            RpcStratumProxy.StratumListener.Stop();
             foreach (var stratumClient in RpcStratumProxy.StratumListener.StratumClients)
             {
                 stratumClient.Value.Dispose();

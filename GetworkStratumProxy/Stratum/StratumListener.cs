@@ -4,15 +4,12 @@ using System.Net.Sockets;
 
 namespace GetworkStratumProxy.Stratum
 {
-    public class StratumListener
+    public class StratumListener : TcpListener
     {
-        public bool IsRunning { get; internal set; }
-        public TcpListener TcpListener { get; private set; }
         public ConcurrentDictionary<EndPoint, StratumClient> StratumClients { get; private set; }
 
-        public StratumListener(IPAddress address, int port)
+        public StratumListener(IPAddress address, int port) : base(address, port)
         {
-            TcpListener = new TcpListener(address, port);
             StratumClients = new ConcurrentDictionary<EndPoint, StratumClient>();
         }
     }
