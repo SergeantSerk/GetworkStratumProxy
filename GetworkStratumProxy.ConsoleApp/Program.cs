@@ -5,7 +5,6 @@ using GetworkStratumProxy.JsonRpc;
 using GetworkStratumProxy.JsonRpc.Eth;
 using System;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Tasks;
