@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GetworkStratumProxy.ConsoleApp.Extension
+namespace GetworkStratumProxy.Extension
 {
     public enum LogLevel
     {

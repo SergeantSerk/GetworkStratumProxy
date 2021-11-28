@@ -4,6 +4,13 @@ using System.Net.Sockets;
 
 namespace GetworkStratumProxy
 {
+    public enum StratumState
+    {
+        Unknown,
+        Authorised,
+        Subscribed
+    }
+
     public class StratumClient : IDisposable
     {
         private bool disposedValue;
@@ -47,7 +54,6 @@ namespace GetworkStratumProxy
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
                     StreamWriter.Dispose();
                     StreamReader.Dispose();
                     TcpClient.Dispose();
