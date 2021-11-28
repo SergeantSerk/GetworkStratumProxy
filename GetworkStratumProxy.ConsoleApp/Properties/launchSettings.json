@@ -1,8 +1,7 @@
 {
   "profiles": {
     "GetworkStratumProxy.ConsoleApp": {
-      "commandName": "Project",
-      "commandLineArgs": "-r http://192.168.1.155:8545/"
+      "commandName": "Project"
     },
     "Docker": {
       "commandName": "Docker"

@@ -2,10 +2,13 @@
 using GetworkStratumProxy.JsonRpc;
 using GetworkStratumProxy.JsonRpc.Eth;
 using GetworkStratumProxy.Node;
+using Nethereum.Hex.HexTypes;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -39,7 +42,7 @@ namespace GetworkStratumProxy.Proxy
                     else
                     {
                         // Broadcast received work params to connected stratum clients
-                        if (clientRecord.Value.MiningReady)
+                        if (clientRecord.Value.StratumState == StratumState.Subscribed)
                         {
                             await SendJobToClientAsync(clientRecord, e);
                         }
@@ -50,26 +53,23 @@ namespace GetworkStratumProxy.Proxy
 
         private async Task SendJobToClientAsync(KeyValuePair<EndPoint, StratumClient> clientRecord, string[] workParams)
         {
-            if (clientRecord.Value.MiningReady)
+            if (clientRecord.Value.PreviousWork == null || !clientRecord.Value.IsSameWork(workParams))
             {
-                if (clientRecord.Value.PreviousWork == null || !clientRecord.Value.IsSameWork(workParams))
+                clientRecord.Value.PreviousWork = workParams;
+                var getworkResponse = new BaseResponse<string[]>
                 {
-                    clientRecord.Value.PreviousWork = workParams;
-                    ConsoleHelper.Log(GetType().Name, $"Building fresh getWork from node for {clientRecord.Key}", LogLevel.Information);
-                    var getworkResponse = new BaseResponse<string[]>
-                    {
-                        Id = 0,
-                        JsonRpc = "2.0",
-                        Error = null,
-                        Result = workParams
-                    };
+                    Id = 0,
+                    JsonRpc = "2.0",
+                    Error = null,
+                    Result = workParams
+                };
 
-                    string responseContentJson = JsonSerializer.Serialize(getworkResponse);
-                    ConsoleHelper.Log(GetType().Name, $"Sending job to {clientRecord.Key}", LogLevel.Information);
-                    ConsoleHelper.Log(GetType().Name, $"(O) {responseContentJson} -> {clientRecord.Key}", LogLevel.Debug);
-                    await clientRecord.Value.StreamWriter.WriteLineAsync($"{responseContentJson}");
-                    await clientRecord.Value.StreamWriter.FlushAsync();
-                }
+                string responseContentJson = JsonSerializer.Serialize(getworkResponse);
+                ConsoleHelper.Log(GetType().Name, $"Sending job " +
+                    $"({workParams[0][..Constants.JobCharactersPrefixCount]}...) to {clientRecord.Key}", LogLevel.Information);
+                ConsoleHelper.Log(GetType().Name, $"(O) {responseContentJson} -> {clientRecord.Key}", LogLevel.Debug);
+                await clientRecord.Value.StreamWriter.WriteLineAsync($"{responseContentJson}");
+                await clientRecord.Value.StreamWriter.FlushAsync();
             }
             else
             {
@@ -98,10 +98,11 @@ namespace GetworkStratumProxy.Proxy
                 if (!Clients.TryGetValue(client.Client.RemoteEndPoint, out StratumClient stratumClient))
                 {
                     // Remote endpoint not registered, add new client
-                    ConsoleHelper.Log(GetType().Name, $"{client.Client.RemoteEndPoint} registered new client", LogLevel.Information);
+                    ConsoleHelper.Log(GetType().Name, $"Registered new client {client.Client.RemoteEndPoint}", LogLevel.Debug);
                     stratumClient = new StratumClient(client);
                     Clients.TryAdd(client.Client.RemoteEndPoint, stratumClient);
                 }
+                stratumClient.StratumState = StratumState.Unknown;
 
                 await HandleClientRpcAsync(stratumClient);
             }
@@ -122,7 +123,7 @@ namespace GetworkStratumProxy.Proxy
                     string responseContent = null;
                     if (baseRequest.Method == "eth_submitLogin")
                     {
-                        ConsoleHelper.Log(GetType().Name, $"Miner login from {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Miner login from {endpoint}", LogLevel.Debug);
                         var loginRequest = JsonSerializer.Deserialize<EthSubmitLoginRequest>(requestContent);
 
                         // Ignore login, return login success
@@ -130,16 +131,26 @@ namespace GetworkStratumProxy.Proxy
                         var loginResponse = new EthSubmitLoginResponse(loginRequest, true);
                         responseContent = JsonSerializer.Serialize(loginResponse);
 
-                        ConsoleHelper.Log(GetType().Name, $"Sending login response to {endpoint}", LogLevel.Information);
-                        stratumClient.MiningReady = true;
+                        ConsoleHelper.Log(GetType().Name, $"Sending login response to {endpoint}", LogLevel.Debug);
+                        stratumClient.StratumState = StratumState.Authorised;
                     }
                     else if (baseRequest.Method == "eth_getWork")
                     {
-                        ConsoleHelper.Log(GetType().Name, $"Miner getWork from {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Miner getWork from {endpoint}", LogLevel.Debug);
+                        if (stratumClient.StratumState != StratumState.Authorised)
+                        {
+                            ConsoleHelper.Log(GetType().Name, $"Miner {endpoint} was not authorised, disconnecting", LogLevel.Warning);
+                            stratumClient.Dispose();
+                            break;
+                        }
+
                         var getworkRequest = JsonSerializer.Deserialize<BaseRequest<object[]>>(requestContent);
 
-                        ConsoleHelper.Log(GetType().Name, $"Polling initial getWork from node for {endpoint}", LogLevel.Information);
                         string[] workParams = Node.GetJob();
+                        stratumClient.PreviousWork = workParams;
+
+                        ConsoleHelper.Log(GetType().Name, $"Sending latest job " +
+                            $"({workParams[0][..Constants.JobCharactersPrefixCount]}...) for {endpoint}", LogLevel.Information);
                         var getworkResponse = new BaseResponse<string[]>
                         {
                             Id = getworkRequest.Id,
@@ -149,12 +160,18 @@ namespace GetworkStratumProxy.Proxy
                         };
 
                         responseContent = JsonSerializer.Serialize(getworkResponse);
-                        ConsoleHelper.Log(GetType().Name, $"Sending job to {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Sending job to {endpoint}", LogLevel.Debug);
+                        stratumClient.StratumState = StratumState.Subscribed;
                     }
                     else if (baseRequest.Method == "eth_submitHashrate")
                     {
-                        ConsoleHelper.Log(GetType().Name, $"Miner hashrate submit from {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Miner hashrate submit from {endpoint}", LogLevel.Debug);
                         var submitHashrateRequest = JsonSerializer.Deserialize<BaseRequest<string[]>>(requestContent);
+
+                        string declaredHashrateString = submitHashrateRequest.Params.FirstOrDefault();
+                        var declaredHashrate = new HexBigInteger(declaredHashrateString ?? "0");
+                        double declaredHashrateMhs = (double)declaredHashrate.Value / Math.Pow(10, 6);
+
                         var submitHashrateResponse = new BaseResponse<bool>
                         {
                             Id = submitHashrateRequest.Id,
@@ -164,11 +181,11 @@ namespace GetworkStratumProxy.Proxy
                         };
 
                         responseContent = JsonSerializer.Serialize(submitHashrateResponse);
-                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted hashrate by {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted hashrate ({declaredHashrateMhs}Mh/s) by {endpoint}", LogLevel.Information);
                     }
                     else if (baseRequest.Method == "eth_submitWork")
                     {
-                        ConsoleHelper.Log(GetType().Name, $"Miner {endpoint} submitted work", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Miner {endpoint} submitted work", LogLevel.Debug);
                         var submitWorkRequest = JsonSerializer.Deserialize<BaseRequest<string[]>>(requestContent);
                         string[] solution = submitWorkRequest.Params;
                         bool workAccepted = await Node.SendSolutionAsync(solution);
@@ -184,7 +201,7 @@ namespace GetworkStratumProxy.Proxy
                             $"was {(workAccepted ? "accepted" : "rejected")}", workAccepted ? LogLevel.Success : LogLevel.Error);
 
                         responseContent = JsonSerializer.Serialize(submitWorkResponse);
-                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted work by {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted work by {endpoint}", LogLevel.Debug);
                     }
                     else
                     {

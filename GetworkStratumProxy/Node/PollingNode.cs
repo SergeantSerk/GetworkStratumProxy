@@ -31,8 +31,14 @@ namespace GetworkStratumProxy.Node
                 return;
             }
 
-            LatestJob = await Web3.Eth.Mining.GetWork.SendRequestAsync();
-            NewJobReceived?.Invoke(this, LatestJob);
+            var receivedJob = await Web3.Eth.Mining.GetWork.SendRequestAsync();
+
+            if (UpdateWork(receivedJob))
+            {
+                ConsoleHelper.Log(GetType().Name, $"Received latest job " +
+                    $"({LatestJob[0][..Constants.JobCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
+                NewJobReceived?.Invoke(this, LatestJob);
+            }
         }
 
         public override void Start()

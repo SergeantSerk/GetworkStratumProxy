@@ -15,11 +15,11 @@ namespace GetworkStratumProxy
     {
         private bool disposedValue;
 
+        public StratumState StratumState { get; internal set; }
         public TcpClient TcpClient { get; private set; }
         public StreamReader StreamReader { get; private set; }
         public StreamWriter StreamWriter { get; private set; }
 
-        public bool MiningReady { get; set; }
         public string[] PreviousWork { get; set; } = null;
 
         public StratumClient(TcpClient tcpClient)

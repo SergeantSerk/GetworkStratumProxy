@@ -23,6 +23,26 @@ namespace GetworkStratumProxy.Node
 
         public abstract void Stop();
 
+        protected bool UpdateWork(string[] newJob)
+        {
+            if (LatestJob == null || LatestJob.Length != newJob.Length)
+            {
+                LatestJob = newJob;
+                return true;
+            }
+
+            for (int i = 0; i < LatestJob.Length; ++i)
+            {
+                if (LatestJob[i] != newJob[i])
+                {
+                    LatestJob = newJob;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public string[] GetJob()
         {
             return LatestJob;
