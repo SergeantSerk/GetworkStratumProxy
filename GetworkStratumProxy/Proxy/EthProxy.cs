@@ -181,7 +181,7 @@ namespace GetworkStratumProxy.Proxy
                         };
 
                         responseContent = JsonSerializer.Serialize(submitHashrateResponse);
-                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted hashrate ({declaredHashrateMhs}Mh/s) by {endpoint}", LogLevel.Information);
+                        ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted hashrate ({declaredHashrateMhs} Mh/s) by {endpoint}", LogLevel.Information);
                     }
                     else if (baseRequest.Method == "eth_submitWork")
                     {
