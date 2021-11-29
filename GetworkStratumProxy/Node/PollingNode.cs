@@ -4,6 +4,9 @@ using System.Timers;
 
 namespace GetworkStratumProxy.Node
 {
+    /// <summary>
+    /// Interval-based job polling system with work polled from node.
+    /// </summary>
     public sealed class PollingNode : BaseNode
     {
         private Timer Timer { get; set; }
@@ -11,9 +14,13 @@ namespace GetworkStratumProxy.Node
 
         public override event EventHandler<string[]> NewJobReceived;
 
+        /// <summary>
+        /// Initialises a job polling subsystem, initially disabled and with specified polling interval, polling for jobs from node RPC.
+        /// </summary>
+        /// <param name="rpcUri">Node RPC url.</param>
+        /// <param name="pollingInterval">Intervals, in milliseconds, to poll jobs in.</param>
         public PollingNode(Uri rpcUri, int pollingInterval) : base(rpcUri)
         {
-            IsRunning = false;
             Timer = new Timer(pollingInterval)
             {
                 AutoReset = true,
@@ -24,7 +31,7 @@ namespace GetworkStratumProxy.Node
 
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!IsRunning)
+            if (!DisposedValue)
             {
                 Stop();
                 Timer.Dispose();
@@ -32,8 +39,7 @@ namespace GetworkStratumProxy.Node
             }
 
             var receivedJob = await Web3.Eth.Mining.GetWork.SendRequestAsync();
-
-            if (UpdateWork(receivedJob))
+            if (TryUpdateWork(receivedJob))
             {
                 ConsoleHelper.Log(GetType().Name, $"Received latest job " +
                     $"({LatestJob[0][..Constants.JobCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
@@ -49,8 +55,6 @@ namespace GetworkStratumProxy.Node
             }
 
             ConsoleHelper.Log(GetType().Name, "Initialising getWork-polling timer and handler", LogLevel.Information);
-            IsRunning = true;
-            Timer.Enabled = true;
             Timer.Start();
         }
 
@@ -62,7 +66,6 @@ namespace GetworkStratumProxy.Node
             }
 
             ConsoleHelper.Log(GetType().Name, "Stopping getWork timer", LogLevel.Information);
-            IsRunning = false;
             Timer.Stop();
         }
     }

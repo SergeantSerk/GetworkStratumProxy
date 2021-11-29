@@ -6,9 +6,8 @@ namespace GetworkStratumProxy.Node
 {
     public abstract class BaseNode : INode, IDisposable
     {
-        private bool disposedValue;
+        protected bool DisposedValue { get; private set; }
 
-        public bool IsRunning { get; protected set; }
         public IWeb3 Web3 { get; private set; }
         public string[] LatestJob { get; protected set; }
 
@@ -23,7 +22,12 @@ namespace GetworkStratumProxy.Node
 
         public abstract void Stop();
 
-        protected bool UpdateWork(string[] newJob)
+        /// <summary>
+        /// Update tracked job with newly received job and return update result.
+        /// </summary>
+        /// <param name="newJob">New job received from node.</param>
+        /// <returns>Returns <see langword="true"/> if job is different from previous tracked job, else <see langword="false"/>.</returns>
+        protected bool TryUpdateWork(string[] newJob)
         {
             if (LatestJob == null || LatestJob.Length != newJob.Length)
             {
@@ -55,17 +59,16 @@ namespace GetworkStratumProxy.Node
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!DisposedValue)
             {
                 if (disposing)
                 {
-                    IsRunning = false;
                     Stop();
                 }
 
                 Web3 = null;
                 LatestJob = null;
-                disposedValue = true;
+                DisposedValue = true;
             }
         }
 

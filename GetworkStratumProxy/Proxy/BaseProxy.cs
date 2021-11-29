@@ -60,6 +60,7 @@ namespace GetworkStratumProxy.Proxy
                     ConsoleHelper.Log(GetType().Name, "Shutting down server", LogLevel.Information);
                     IsListening = false;
                     Server.Stop();
+                    // Disconnect each client
                     foreach (var client in Clients)
                     {
                         client.Value.Dispose();

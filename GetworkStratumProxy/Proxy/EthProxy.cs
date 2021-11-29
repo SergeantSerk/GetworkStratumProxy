@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Numerics;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -31,8 +30,10 @@ namespace GetworkStratumProxy.Proxy
             {
                 foreach (KeyValuePair<EndPoint, StratumClient> clientRecord in Clients)
                 {
+                    // Check if any of the users are disconnected
                     if (clientRecord.Value.TcpClient.IsDisconnected())
                     {
+                        // Remove from the subscribed list
                         if (Clients.TryRemove(clientRecord))
                         {
                             clientRecord.Value.Dispose();
@@ -55,6 +56,7 @@ namespace GetworkStratumProxy.Proxy
         {
             if (clientRecord.Value.PreviousWork == null || !clientRecord.Value.IsSameWork(workParams))
             {
+                // Update the client's previous job parameters
                 clientRecord.Value.PreviousWork = workParams;
                 var getworkResponse = new BaseResponse<string[]>
                 {
@@ -92,6 +94,7 @@ namespace GetworkStratumProxy.Proxy
                 return;
             }
 
+            // Sanity check whether client already exists in subscribed clients
             if (!Clients.ContainsKey(client.Client.RemoteEndPoint))
             {
                 ConsoleHelper.Log(GetType().Name, $"{client.Client.RemoteEndPoint} connected", LogLevel.Information);
@@ -112,6 +115,7 @@ namespace GetworkStratumProxy.Proxy
         {
             EndPoint endpoint = stratumClient.TcpClient.Client.RemoteEndPoint;
 
+            // Perform this internal loop while client is alive
             while (!stratumClient.TcpClient.IsDisconnected())
             {
                 string requestContent = await stratumClient.StreamReader.ReadLineAsync();
@@ -214,8 +218,10 @@ namespace GetworkStratumProxy.Proxy
                 }
             }
 
+            // Attempt to remove client from subscribed clients
             if (Clients.TryRemove(endpoint, out StratumClient stratumClientToFinalise))
             {
+                // Disconnect client
                 stratumClientToFinalise.Dispose();
                 ConsoleHelper.Log(GetType().Name, $"{endpoint} disconnected", LogLevel.Information);
             }
