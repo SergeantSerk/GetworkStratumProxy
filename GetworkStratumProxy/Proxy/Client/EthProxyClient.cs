@@ -3,26 +3,77 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
 using StreamJsonRpc;
 using System;
-using System.Net;
+using System.IO;
+using System.Net.Sockets;
+using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Rpc
+namespace GetworkStratumProxy.Proxy.Client
 {
-    public class EthProxyClientRpc
+    public sealed class EthProxyClient : BaseClient
     {
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
 
-        public EndPoint Endpoint { get; private set; }
-        public StratumState StratumState { get; private set; }
-        public string[] CurrentJob { get; private set; }
+        public StreamWriter BackgroundJobWriter { get; private set; }
+        public string[] CurrentJob { get; internal set; }
 
-        public EthProxyClientRpc(EndPoint endpoint, IEthGetWork getWorkService, IEthSubmitWork submitWorkService)
+        public EthProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
         {
-            Endpoint = endpoint;
-            StratumState = StratumState.Unauthorised;
+            var networkStream = TcpClient.GetStream();
+            BackgroundJobWriter = new StreamWriter(networkStream);
+
             GetWorkService = getWorkService;
             SubmitWorkService = submitWorkService;
+        }
+
+        internal bool IsSameJob(string[] job)
+        {
+            if (CurrentJob.Length != job.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < CurrentJob.Length; ++i)
+            {
+                if (CurrentJob[i] != job[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Blocking listen and respond to EthProxy RPC messages.
+        /// </summary>
+        internal async Task StartListeningAsync()
+        {
+            using var networkStream = TcpClient.GetStream();
+            using var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(1, 0) };
+            using var handler = new NewLineDelimitedMessageHandler(networkStream, networkStream, formatter);
+            using var jsonRpc = new JsonRpc(handler, this);
+
+            jsonRpc.StartListening();
+            await jsonRpc.Completion;
+            ConsoleHelper.Log(GetType().Name, $"RPC service stopped for {Endpoint}", LogLevel.Debug);
+        }
+
+        internal void NewJobNotificationEvent(object sender, string[] e)
+        {
+            if (StratumState == StratumState.Subscribed && !IsSameJob(e))
+            {
+                CurrentJob = e;
+                var notifyJobResponse = new Rpc.EthProxy.NotifyJobResponse(e);
+                var notifyJobResponseString = JsonSerializer.Serialize(notifyJobResponse);
+
+                ConsoleHelper.Log(GetType().Name, $"Sending job " +
+                    $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
+                ConsoleHelper.Log(GetType().Name, $"(O) {notifyJobResponseString} -> {Endpoint}", LogLevel.Debug);
+                BackgroundJobWriter.WriteLine(notifyJobResponseString);
+                BackgroundJobWriter.Flush();
+            }
         }
 
         [JsonRpcMethod("eth_submitLogin")]
@@ -84,6 +135,12 @@ namespace GetworkStratumProxy.Rpc
 
             ConsoleHelper.Log(GetType().Name, $"Acknowledging submitted work by {Endpoint}", LogLevel.Debug);
             return workAccepted;
+        }
+
+        public override void Dispose()
+        {
+            BackgroundJobWriter.Dispose();
+            TcpClient.Dispose();
         }
     }
 }

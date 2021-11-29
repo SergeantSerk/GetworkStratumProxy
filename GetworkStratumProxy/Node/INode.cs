@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Node
 {
-    internal interface INode : IDisposable
+    public interface INode : IDisposable
     {
         public void Start();
         public void Stop();

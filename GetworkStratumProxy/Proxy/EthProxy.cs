@@ -1,15 +1,14 @@
 ﻿using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Node;
-using GetworkStratumProxy.Rpc;
-using StreamJsonRpc;
+using GetworkStratumProxy.Proxy.Client;
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy
 {
-    public sealed class EthProxy : BaseProxy
+    public sealed class EthProxy : BaseProxy<EthProxyClient>
     {
         public override bool IsListening { get; protected set; }
         protected override TcpListener Server { get; set; }
@@ -36,56 +35,29 @@ namespace GetworkStratumProxy.Proxy
 
             var endpoint = client.Client.RemoteEndPoint;
             ConsoleHelper.Log(GetType().Name, $"{endpoint} connected", LogLevel.Information);
-            if (!Clients.TryGetValue(endpoint, out StratumClient stratumClient))
+
+            using (EthProxyClient proxyClient = GetClientOrNew(client))
+            {
+                Node.NewJobReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
+                await proxyClient.StartListeningAsync(); // Blocking listen
+                Node.NewJobReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
+                ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
+            }
+
+            Clients.TryRemove(endpoint, out EthProxyClient clientToRemove);
+            ConsoleHelper.Log(GetType().Name, $"{clientToRemove.Endpoint} disconnected", LogLevel.Information);
+        }
+
+        private EthProxyClient GetClientOrNew(TcpClient tcpClient)
+        {
+            if (!Clients.TryGetValue(tcpClient.Client.RemoteEndPoint, out EthProxyClient ethProxyClient))
             {
                 // Remote endpoint not registered, add new client
-                ConsoleHelper.Log(GetType().Name, $"Registered new client {endpoint}", LogLevel.Debug);
-                stratumClient = new StratumClient(client);
-                Clients.TryAdd(endpoint, stratumClient);
+                ConsoleHelper.Log(GetType().Name, $"Registered new client {tcpClient.Client.RemoteEndPoint}", LogLevel.Debug);
+                ethProxyClient = new EthProxyClient(tcpClient, Node.Web3.Eth.Mining.GetWork, Node.Web3.Eth.Mining.SubmitWork);
+                Clients.TryAdd(tcpClient.Client.RemoteEndPoint, ethProxyClient);
             }
-
-            var ethProxyClientRpc = new EthProxyClientRpc(endpoint, Node.Web3.Eth.Mining.GetWork, Node.Web3.Eth.Mining.SubmitWork);
-            using (NetworkStream networkStream = client.GetStream())
-            using (var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(1, 0) })
-            using (var handler = new NewLineDelimitedMessageHandler(networkStream, networkStream, formatter))
-            using (var jsonRpc = new JsonRpc(handler, ethProxyClientRpc))
-            {
-                bool connected = true;
-                jsonRpc.StartListening();
-
-                EventHandler<string[]> NewJobHandler = null;
-                Node.NewJobReceived += NewJobHandler = (o, e) =>
-                {
-                    // Check if client is disconnected
-                    if (!connected)
-                    {
-                        // Unsubscribe event
-                        Node.NewJobReceived -= NewJobHandler;
-                        ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
-                        return;
-                    }
-
-                    if (ethProxyClientRpc.StratumState == StratumState.Subscribed)
-                    {
-                        var notifyJobResponse = new Rpc.EthProxy.NotifyJobResponse(e);
-                        var notifyJobResponseString = JsonSerializer.Serialize(notifyJobResponse);
-                        ConsoleHelper.Log(GetType().Name, $"Sending job " +
-                            $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {endpoint}", LogLevel.Information);
-                        ConsoleHelper.Log(GetType().Name, $"(O) {notifyJobResponseString} -> {endpoint}", LogLevel.Debug);
-                        stratumClient.StreamWriter.WriteLine(notifyJobResponseString);
-                        stratumClient.StreamWriter.Flush();
-                    }
-                };
-
-                await jsonRpc.Completion;
-                connected = false;
-            }
-
-            if (Clients.TryRemove(endpoint, out StratumClient stratumClientToFinalise))
-            {
-                stratumClientToFinalise.Dispose();
-                ConsoleHelper.Log(GetType().Name, $"{endpoint} disconnected", LogLevel.Information);
-            }
+            return ethProxyClient;
         }
     }
 }

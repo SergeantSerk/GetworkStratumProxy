@@ -28,8 +28,8 @@ namespace GetworkStratumProxy.ConsoleApp
 
             using BaseNode pollingNode = new PollingNode(options.RpcUri, options.PollInterval);
             pollingNode.Start();
-            using BaseProxy Proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort);
-            Proxy.Start();
+            using IProxy proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort);
+            proxy.Start();
 
             Console.CancelKeyPress += (o, e) =>
             {
