@@ -6,7 +6,7 @@ namespace GetworkStratumProxy
 {
     public enum StratumState
     {
-        Unknown,
+        Unauthorised,
         Authorised,
         Subscribed
     }

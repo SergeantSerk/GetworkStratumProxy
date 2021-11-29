@@ -1,21 +1,26 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace GetworkStratumProxy.JsonRpc
+namespace GetworkStratumProxy.Rpc.EthProxy
 {
-    public class BaseResponse<T> : BaseJsonRpc
+    public class NotifyJobResponse
     {
+        [JsonPropertyName("id")]
+        public long Id { get; set; }
+
         [JsonPropertyName("jsonrpc")]
         public string JsonRpc { get; set; }
 
         [JsonPropertyName("result")]
-        public T Result { get; set; }
+        public string[] Result { get; set; }
 
         [JsonPropertyName("error")]
         public Error Error { get; set; }
 
-        public BaseResponse()
+        public NotifyJobResponse(string[] job, long id = 0)
         {
+            Id = id;
             JsonRpc = "2.0";
+            Result = job;
         }
     }
 
