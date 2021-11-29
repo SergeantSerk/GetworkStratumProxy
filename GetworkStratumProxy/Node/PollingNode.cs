@@ -31,7 +31,7 @@ namespace GetworkStratumProxy.Node
 
         private async void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!DisposedValue)
+            if (DisposedValue)
             {
                 Stop();
                 Timer.Dispose();
