@@ -26,21 +26,23 @@ namespace GetworkStratumProxy.ConsoleApp
 
             ConsoleHelper.IsVerbose = options.Verbose;
 
-            using BaseNode pollingNode = new PollingNode(options.RpcUri, options.PollInterval);
-            pollingNode.Start();
-            using IProxy proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort);
-            proxy.Start();
-
-            Console.CancelKeyPress += (o, e) =>
+            using (BaseNode pollingNode = new PollingNode(options.RpcUri, options.PollInterval))
+            using (IProxy proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort))
             {
-                e.Cancel = true;
-                ConsoleHelper.Log("Program", $"Caught {e.SpecialKey}, stopping", LogLevel.Information);
-                IsRunning = false;
-            };
+                pollingNode.Start();
+                proxy.Start();
 
-            while (IsRunning)
-            {
-                await Task.Delay(1000);
+                Console.CancelKeyPress += (o, e) =>
+                {
+                    e.Cancel = true;
+                    ConsoleHelper.Log("Program", $"Caught {e.SpecialKey}, stopping", LogLevel.Information);
+                    IsRunning = false;
+                };
+
+                while (IsRunning)
+                {
+                    await Task.Delay(1000);
+                }
             }
 
             ConsoleHelper.Log("Program", "Exited gracefully", LogLevel.Information);
