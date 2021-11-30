@@ -1,6 +1,5 @@
 ﻿using Nethereum.Web3;
 using System;
-using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Node
 {
@@ -9,7 +8,11 @@ namespace GetworkStratumProxy.Node
         protected bool DisposedValue { get; private set; }
 
         public IWeb3 Web3 { get; private set; }
-        public string[] LatestJob { get; protected set; }
+
+        /// <summary>
+        /// Hold latest job for tracking incoming new jobs
+        /// </summary>
+        protected string[] LatestJob { get; set; }
 
         public abstract event EventHandler<string[]> NewJobReceived;
 
@@ -45,16 +48,6 @@ namespace GetworkStratumProxy.Node
             }
 
             return false;
-        }
-
-        public string[] GetJob()
-        {
-            return LatestJob;
-        }
-
-        public async Task<bool> SendSolutionAsync(string[] solution)
-        {
-            return await Web3.Eth.Mining.SubmitWork.SendRequestAsync(solution[0], solution[1], solution[2]);
         }
 
         protected virtual void Dispose(bool disposing)
