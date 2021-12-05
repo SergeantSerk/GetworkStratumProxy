@@ -7,14 +7,14 @@ namespace GetworkStratumProxy.Node
     {
         protected bool DisposedValue { get; private set; }
 
-        public IWeb3 Web3 { get; private set; }
+        internal IWeb3 Web3 { get; private set; }
 
         /// <summary>
         /// Hold latest job for tracking incoming new jobs
         /// </summary>
         protected string[] LatestJob { get; set; }
 
-        public abstract event EventHandler<string[]> NewJobReceived;
+        internal abstract event EventHandler<string[]> NewJobReceived;
 
         public BaseNode(Uri rpcUri)
         {

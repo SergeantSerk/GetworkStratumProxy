@@ -12,7 +12,7 @@ namespace GetworkStratumProxy.Node
         private Timer Timer { get; set; }
         public int PollingInterval { get; private set; }
 
-        public override event EventHandler<string[]> NewJobReceived;
+        internal override event EventHandler<string[]> NewJobReceived;
 
         /// <summary>
         /// Initialises a job polling subsystem, initially disabled and with specified polling interval, polling for jobs from node RPC.
