@@ -1,9 +1,9 @@
 ﻿using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Node;
 using GetworkStratumProxy.Proxy.Client;
-using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy
 {
@@ -12,39 +12,19 @@ namespace GetworkStratumProxy.Proxy
         public override bool IsListening { get; protected set; }
         protected override TcpListener Server { get; set; }
 
-        public EthProxy(BaseNode node, IPAddress address, int port) : base(node)
+        public EthProxy(BaseNode node, IPAddress address, int port) : base(node, address, port)
         {
-            Server = new TcpListener(address, port);
+
         }
 
-        protected override async void HandleTcpClient(IAsyncResult ar)
+        protected override async Task BeginClientSessionAsync(TcpClient client)
         {
-            TcpClient client;
-            try
-            {
-                TcpListener listener = ar.AsyncState as TcpListener;
-                client = listener.EndAcceptTcpClient(ar);
-            }
-            catch (ObjectDisposedException)
-            {
-                // Safely ignore disposed connections
-                ConsoleHelper.Log(GetType().Name, "Could not accept connected client, disposing", LogLevel.Warning);
-                return;
-            }
-
             var endpoint = client.Client.RemoteEndPoint;
-            ConsoleHelper.Log(GetType().Name, $"{endpoint} connected", LogLevel.Information);
-
-            using (EthProxyClient proxyClient = GetClientOrNew(client))
-            {
-                Node.NewJobReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
-                await proxyClient.StartListeningAsync(); // Blocking listen
-                Node.NewJobReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
-                ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
-            }
-
-            Clients.TryRemove(endpoint, out EthProxyClient clientToRemove);
-            ConsoleHelper.Log(GetType().Name, $"{clientToRemove.Endpoint} disconnected", LogLevel.Information);
+            using EthProxyClient proxyClient = GetClientOrNew(client);
+            Node.NewJobReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
+            await proxyClient.StartListeningAsync(); // Blocking listen
+            Node.NewJobReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
+            ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
         }
 
         private EthProxyClient GetClientOrNew(TcpClient tcpClient)

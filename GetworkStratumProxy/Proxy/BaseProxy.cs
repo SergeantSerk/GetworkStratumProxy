@@ -19,11 +19,12 @@ namespace GetworkStratumProxy.Proxy
         protected abstract TcpListener Server { get; set; }
         protected ConcurrentDictionary<EndPoint, T> Clients { get; private set; }
 
-        public BaseProxy(BaseNode node)
+        public BaseProxy(BaseNode node, IPAddress address, int port)
         {
             Node = node;
             IsListening = false;
             Clients = new ConcurrentDictionary<EndPoint, T>();
+            Server = new TcpListener(address, port);
         }
 
         public void Start()
@@ -36,7 +37,7 @@ namespace GetworkStratumProxy.Proxy
             {
                 while (IsListening)
                 {
-                    Server.BeginAcceptTcpClient(HandleTcpClient, Server)
+                    Server.BeginAcceptTcpClient(InitialiseTcpClient, Server)
                         .AsyncWaitHandle
                         .WaitOne();
                 }
@@ -44,7 +45,31 @@ namespace GetworkStratumProxy.Proxy
             _ = Task.Run(clientHandleLoopAction);
         }
 
-        protected abstract void HandleTcpClient(IAsyncResult ar);
+        private async void InitialiseTcpClient(IAsyncResult ar)
+        {
+            TcpClient client;
+            try
+            {
+                TcpListener listener = ar.AsyncState as TcpListener;
+                client = listener.EndAcceptTcpClient(ar);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Safely ignore disposed connections
+                ConsoleHelper.Log(GetType().Name, "Could not accept connected client, disposing", LogLevel.Warning);
+                return;
+            }
+
+            var endpoint = client.Client.RemoteEndPoint;
+            ConsoleHelper.Log(GetType().Name, $"{endpoint} connected", LogLevel.Information);
+
+            await BeginClientSessionAsync(client);
+
+            Clients.TryRemove(endpoint, out T clientToRemove);
+            ConsoleHelper.Log(GetType().Name, $"{clientToRemove.Endpoint} disconnected", LogLevel.Information);
+        }
+
+        protected abstract Task BeginClientSessionAsync(TcpClient client);
 
         public void Stop()
         {
