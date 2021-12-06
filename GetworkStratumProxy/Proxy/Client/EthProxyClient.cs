@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy.Client
 {
-    public sealed class EthProxyClient : BaseClient
+    public sealed class EthProxyClient : BaseProxyClient
     {
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }

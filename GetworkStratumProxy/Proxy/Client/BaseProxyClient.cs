@@ -11,13 +11,13 @@ namespace GetworkStratumProxy.Proxy.Client
         Subscribed
     }
 
-    public abstract class BaseClient : IDisposable
+    public abstract class BaseProxyClient : IDisposable
     {
         public TcpClient TcpClient { get; protected set; }
         public EndPoint Endpoint { get; private set; }
         public StratumState StratumState { get; protected set; }
 
-        public BaseClient(TcpClient tcpClient)
+        public BaseProxyClient(TcpClient tcpClient)
         {
             TcpClient = tcpClient;
             Endpoint = tcpClient.Client.RemoteEndPoint;

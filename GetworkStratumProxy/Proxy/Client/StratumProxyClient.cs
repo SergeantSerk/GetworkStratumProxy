@@ -3,7 +3,7 @@ using System.Net.Sockets;
 
 namespace GetworkStratumProxy.Proxy.Client
 {
-    public sealed class StratumProxyClient : BaseClient
+    public sealed class StratumProxyClient : BaseProxyClient
     {
         public StratumProxyClient(TcpClient tcpClient) : base(tcpClient)
         {

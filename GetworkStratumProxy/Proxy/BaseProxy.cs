@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy
 {
-    public abstract class BaseProxy<T> : IProxy, IDisposable where T : BaseClient
+    public abstract class BaseProxy<T> : IProxy, IDisposable where T : BaseProxyClient
     {
         private bool disposedValue;
 
