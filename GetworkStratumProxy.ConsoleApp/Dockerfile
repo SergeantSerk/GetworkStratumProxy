@@ -6,6 +6,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
 COPY ["GetworkStratumProxy.ConsoleApp/GetworkStratumProxy.ConsoleApp.csproj", "GetworkStratumProxy.ConsoleApp/"]
+COPY ["GetworkStratumProxy/GetworkStratumProxy.csproj", "GetworkStratumProxy/"]
 RUN dotnet restore "GetworkStratumProxy.ConsoleApp/GetworkStratumProxy.ConsoleApp.csproj"
 COPY . .
 WORKDIR "/src/GetworkStratumProxy.ConsoleApp"
