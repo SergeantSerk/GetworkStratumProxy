@@ -28,6 +28,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        file: GetworkStratumProxy.ConsoleApp/Dockerfile
+        file: ./GetworkStratumProxy.ConsoleApp/Dockerfile
         push: true
-        tags: user/app:latest
+        tags: sergeantserk/getworkstratumproxy:latest
