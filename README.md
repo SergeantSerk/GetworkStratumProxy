@@ -35,7 +35,7 @@ Running **GSP** should be fairly straightforward, only ever needing to passing f
  `dotnet GetworkStratumProxy.ConsoleApp.dll --rpc http://127.0.0.1:8545/ -v`
  - It is advised that you use `-v` argument for verbose output for the first run, to see if polling for the server is successful.
  
- `dotnet .\GetworkStratumProxy.ConsoleApp.dll --rpc http://127.0.0.1:8545/ -v --poll-interval 200`
+ `dotnet GetworkStratumProxy.ConsoleApp.dll --rpc http://127.0.0.1:8545/ -v --poll-interval 200`
  - You can specify the `--poll-interval` in milliseconds at which **GSP** polls the server for new jobs. The default value should be fine but can be changed to something lower.
 
 # Contribute
