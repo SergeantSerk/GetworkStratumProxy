@@ -38,9 +38,3 @@ jobs:
         
       # Duration after which artifact will expire in days. 0 means using default retention. Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
         retention-days: 0
-    
-    - name: Release
-      uses: elgohr/Github-Release-Action@v3.1
-      with:
-        # The name of the release to publish
-        release: gsp-net5.0.zip
