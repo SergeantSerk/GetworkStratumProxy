@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v2
     - name: Docker Login
       uses: docker/login-action@v1.10.0
       with:
@@ -28,6 +29,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        file: GetworkStratumProxy.ConsoleApp/Dockerfile
+        file: ./GetworkStratumProxy.ConsoleApp/Dockerfile
         push: true
-        tags: user/app:latest
+        tags: sergeantserk/getworkstratumproxy:latest
