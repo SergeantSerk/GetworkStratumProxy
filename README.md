@@ -26,6 +26,18 @@ GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on
  ## Binaries
  Currently, no binaries are built and added to [releases](https://github.com/SergeantSerk/GetworkStratumProxy/releases) yet. As such, you have to clone this repository and build it yourself. See **Source**.
 
+# Usage
+Running **GSP** should be fairly straightforward, only ever needing to passing few arguments.
+
+**GSP** currently expects you to pass `--rpc URL` argument, where the URL is a properly constructed URL pointing to a blockchain node that supports `eth_getWork` API, such as `http://127.0.0.1:8545`.
+
+ ## Example
+ `dotnet GetworkStratumProxy.ConsoleApp.dll --rpc http://127.0.0.1:8545/ -v`
+ - It is advised that you use `-v` argument for verbose output for the first run, to see if polling for the server is successful.
+ 
+ `dotnet .\GetworkStratumProxy.ConsoleApp.dll --rpc http://127.0.0.1:8545/ -v --poll-interval 200`
+ - You can specify the `--poll-interval` in milliseconds at which **GSP** polls the server for new jobs. The default value should be fine but can be changed to something lower.
+
 # Contribute
 Pleae submit any issues when using **GSP** in order to improve it (such as uncaught exceptions, communication issues).
 You can contribute to this repository as need be under [licence](LICENSE).
