@@ -21,17 +21,11 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore -c Release
-  
-  test:
-    runs-on: ubuntu-latest
-    steps:
+      
     - name: Test
       run: dotnet test --no-build --verbosity normal -c Release
-  
-  artifact:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Upload a Build Artifact
+      
+    - name: Artifact
       uses: actions/upload-artifact@v2.3.0
       with:
         # Artifact name
@@ -44,11 +38,8 @@ jobs:
         
       # Duration after which artifact will expire in days. 0 means using default retention. Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
         retention-days: 0
-
-  release:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Github Release
+    
+    - name: Release
       uses: elgohr/Github-Release-Action@v3.1
       with:
         # The name of the release to publish
