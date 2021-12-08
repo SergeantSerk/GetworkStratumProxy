@@ -1,5 +1,7 @@
 # GetworkStratumProxy
 [![Build status](https://ci.appveyor.com/api/projects/status/tly2i35nasi54whm?svg=true)](https://ci.appveyor.com/project/SergeantSerk/getworkstratumproxy)
+[![.NET](https://github.com/SergeantSerk/GetworkStratumProxy/actions/workflows/dotnet.yml/badge.svg)](https://github.com/SergeantSerk/GetworkStratumProxy/actions/workflows/dotnet.yml)
+[![Docker](https://github.com/SergeantSerk/GetworkStratumProxy/actions/workflows/docker-build-publish.yml/badge.svg)](https://github.com/SergeantSerk/GetworkStratumProxy/actions/workflows/docker-build-publish.yml)
 
 GetworkStratumProxy (**GSP**) is a "reverse" proxy for stratum miners to mine on getWork-based servers.
 
