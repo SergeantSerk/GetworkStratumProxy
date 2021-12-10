@@ -56,6 +56,7 @@ namespace GetworkStratumProxy.Proxy.Client
             using var jsonRpc = new JsonRpc(handler, this);
 
             jsonRpc.StartListening();
+
             await jsonRpc.Completion;
             ConsoleHelper.Log(GetType().Name, $"RPC service stopped for {Endpoint}", LogLevel.Debug);
         }
