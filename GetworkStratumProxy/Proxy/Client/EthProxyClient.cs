@@ -5,7 +5,6 @@ using StreamJsonRpc;
 using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy.Client
@@ -15,7 +14,6 @@ namespace GetworkStratumProxy.Proxy.Client
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
 
-        public StreamWriter BackgroundJobWriter { get; private set; }
         public string[] CurrentJob { get; internal set; }
 
         public EthProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
@@ -67,13 +65,9 @@ namespace GetworkStratumProxy.Proxy.Client
             {
                 CurrentJob = e;
                 var notifyJobResponse = new Rpc.EthProxy.NotifyJobResponse(e);
-                var notifyJobResponseString = JsonSerializer.Serialize(notifyJobResponse);
-
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
                     $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
-                ConsoleHelper.Log(GetType().Name, $"(O) {notifyJobResponseString} -> {Endpoint}", LogLevel.Debug);
-                BackgroundJobWriter.WriteLine(notifyJobResponseString);
-                BackgroundJobWriter.Flush();
+                Notify(notifyJobResponse);
             }
         }
 
