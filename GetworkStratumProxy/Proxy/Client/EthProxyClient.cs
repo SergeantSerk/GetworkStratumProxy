@@ -55,7 +55,24 @@ namespace GetworkStratumProxy.Proxy.Client
             using var handler = new NewLineDelimitedMessageHandler(networkStream, networkStream, formatter);
             using var jsonRpc = new JsonRpc(handler, this);
 
-            jsonRpc.StartListening();
+            // Handle cases where provided JSON-RPC version is 2.0
+            try
+            {
+                jsonRpc.StartListening();
+            }
+            catch (Newtonsoft.Json.JsonSerializationException e)
+            {
+                if (e.Message.Contains("Unrecognized JSON-RPC 1.0 message (\"jsonrpc\" property not expected. Use protocol version 2.0.)"))
+                {
+                    formatter.ProtocolVersion = new Version(2, 0);
+                    jsonRpc.StartListening();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            
             await jsonRpc.Completion;
             ConsoleHelper.Log(GetType().Name, $"RPC service stopped for {Endpoint}", LogLevel.Debug);
         }
