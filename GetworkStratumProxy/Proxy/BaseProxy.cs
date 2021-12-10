@@ -37,29 +37,16 @@ namespace GetworkStratumProxy.Proxy
             {
                 while (IsListening)
                 {
-                    Server.BeginAcceptTcpClient(InitialiseTcpClient, Server)
-                        .AsyncWaitHandle
-                        .WaitOne();
+                    var client = Server.AcceptTcpClient();
+                    // Set off initialisation of new client and begin listening for new client
+                    _ = Task.Run(async () => await InitialiseTcpClientAsync(client));
                 }
             });
             _ = Task.Run(clientHandleLoopAction);
         }
 
-        private async void InitialiseTcpClient(IAsyncResult ar)
+        private async Task InitialiseTcpClientAsync(TcpClient client)
         {
-            TcpClient client;
-            try
-            {
-                TcpListener listener = ar.AsyncState as TcpListener;
-                client = listener.EndAcceptTcpClient(ar);
-            }
-            catch (ObjectDisposedException)
-            {
-                // Safely ignore disposed connections
-                ConsoleHelper.Log(GetType().Name, "Could not accept connected client, disposing", LogLevel.Warning);
-                return;
-            }
-
             var endpoint = client.Client.RemoteEndPoint;
             ConsoleHelper.Log(GetType().Name, $"{endpoint} connected", LogLevel.Information);
 
