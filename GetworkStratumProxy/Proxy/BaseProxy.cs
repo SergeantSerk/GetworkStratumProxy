@@ -37,7 +37,26 @@ namespace GetworkStratumProxy.Proxy
             {
                 while (IsListening)
                 {
-                    var client = Server.AcceptTcpClient();
+                    TcpClient client;
+                    try
+                    {
+                        client = Server.AcceptTcpClient();
+                    }
+                    catch (SocketException e)
+                    {
+                        if (e.ErrorCode == 10004)
+                        {
+                            // Server was closed due to WSACancelBlockingCall
+                            // likely due to shutdown prompt, safely ignore
+                            break;
+                        }
+                        else
+                        {
+                            // Unknown error, throw back
+                            throw;
+                        }
+                    }
+
                     // Set off initialisation of new client and begin listening for new client
                     _ = Task.Run(async () => await InitialiseTcpClientAsync(client));
                 }
