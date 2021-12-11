@@ -64,7 +64,7 @@ namespace GetworkStratumProxy.Proxy.Client
             if (StratumState == StratumState.Subscribed && !IsSameJob(e))
             {
                 CurrentJob = e;
-                var notifyJobResponse = new Rpc.EthProxy.NotifyJobResponse(e);
+                var notifyJobResponse = new Rpc.EthProxy.NewJobNotification(e);
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
                     $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
                 Notify(notifyJobResponse);

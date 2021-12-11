@@ -2,7 +2,7 @@
 
 namespace GetworkStratumProxy.Rpc
 {
-    public abstract class JsonMessage
+    public abstract class JsonRpcMessage
     {
         [JsonPropertyName("id")]
         public int? Id { get; set; }
