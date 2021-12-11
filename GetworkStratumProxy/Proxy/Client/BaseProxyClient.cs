@@ -30,7 +30,7 @@ namespace GetworkStratumProxy.Proxy.Client
             StratumState = StratumState.Unauthorised;
         }
 
-        protected void Notify(JsonResponse notification)
+        protected void Notify<T>(T notification) where T : JsonRpcResponse
         {
             var notificationString = JsonSerializer.Serialize(notification);
             ConsoleHelper.Log(GetType().Name, $"(O) {notificationString} -> {Endpoint}", LogLevel.Debug);

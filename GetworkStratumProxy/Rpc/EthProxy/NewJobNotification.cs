@@ -1,8 +1,8 @@
 ﻿namespace GetworkStratumProxy.Rpc.EthProxy
 {
-    public sealed class NotifyJobResponse : JsonResponse
+    public sealed class NewJobNotification : JsonRpcNotification
     {
-        public NotifyJobResponse(string[] job)
+        public NewJobNotification(string[] job)
         {
             Id = 0;
             JsonRpc = "2.0";

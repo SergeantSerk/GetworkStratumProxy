@@ -2,11 +2,8 @@
 
 namespace GetworkStratumProxy.Rpc
 {
-    public abstract class JsonResponse : JsonMessage
+    public abstract class JsonRpcResponse : JsonRpcMessage
     {
-        [JsonPropertyName("result")]
-        public object[] Result { get; set; }
-
         [JsonPropertyName("error")]
         public Error Error { get; set; }
     }
