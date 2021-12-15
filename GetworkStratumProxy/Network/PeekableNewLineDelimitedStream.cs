@@ -7,35 +7,20 @@ using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Network
 {
-    internal class PeekableNewLineDelimitedStream : Stream, IDisposable
+    internal class PeekableNewLineDelimitedStream : NetworkStream
     {
-        private NetworkStream NetworkStream { get; }
         private MemoryStream ReadStreamBuffer { get; }
 
-        public override bool CanRead => NetworkStream.CanRead;
-        public override bool CanSeek => NetworkStream.CanSeek;
-        public override bool CanWrite => NetworkStream.CanWrite;
-        public override long Length => NetworkStream.Length;
-        public override long Position
+        public PeekableNewLineDelimitedStream(Socket socket) : base(socket)
         {
-            get => NetworkStream.Position;
-            set => NetworkStream.Position = value;
-        }
-
-        public PeekableNewLineDelimitedStream(NetworkStream networkStream)
-        {
-            NetworkStream = networkStream;
             ReadStreamBuffer = new MemoryStream();
         }
 
-        public override void Flush()
+        public override int ReadByte()
         {
-            NetworkStream.Flush();
-        }
-
-        public new int ReadByte()
-        {
-            return ReadStreamBuffer.Position == ReadStreamBuffer.Length ? base.ReadByte() : ReadStreamBuffer.ReadByte();
+            byte[] buffer = new byte[1];
+            Read(buffer, 0, buffer.Length);
+            return buffer[0];
         }
 
         public override int Read(byte[] buffer, int offset, int count)
@@ -64,7 +49,7 @@ namespace GetworkStratumProxy.Network
                 // ReadStreamBuffer did not fill buffer with enough data
                 // read more
                 byte[] networkBytes = new byte[count];
-                bytesRead = NetworkStream.Read(networkBytes, offset, count);
+                bytesRead = base.Read(networkBytes, offset, count);
                 for (int i = 0; i < networkBytes.Length; i++)
                 {
                     buffer[offset + i] = networkBytes[i];
@@ -76,23 +61,30 @@ namespace GetworkStratumProxy.Network
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await Task.CompletedTask;
-            return Read(buffer, offset, count);
+            return await Task.Run(() => Read(buffer, offset, count), cancellationToken);
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
+        public override int Read(Span<byte> buffer)
         {
-            return NetworkStream.Seek(offset, origin);
+            byte[] internalBuffer = new byte[buffer.Length];
+            int bytesRead = Read(internalBuffer, 0, internalBuffer.Length);
+            internalBuffer.CopyTo(buffer);
+            return bytesRead;
         }
 
-        public override void SetLength(long value)
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
-            NetworkStream.SetLength(value);
+            return await Task.Run(() => Read(buffer.Span), cancellationToken);
         }
 
-        public override void Write(byte[] buffer, int offset, int count)
+        public override IAsyncResult BeginRead(byte[] buffer, int offset, int size, AsyncCallback callback, object state)
         {
-            NetworkStream.Write(buffer, offset, count);
+            throw new NotImplementedException();
+        }
+
+        public override int EndRead(IAsyncResult asyncResult)
+        {
+            throw new NotImplementedException();
         }
 
         public string PeekLine()
@@ -108,7 +100,9 @@ namespace GetworkStratumProxy.Network
             ReadStreamBuffer.Seek(readStreamBufferPosition, SeekOrigin.Begin);
 
             byte[] bytes = ReadStreamBuffer.ToArray();
-            return Encoding.UTF8.GetString(bytes);
+            string line = Encoding.UTF8.GetString(bytes);
+            Console.WriteLine(line);
+            return line;
         }
     }
 }

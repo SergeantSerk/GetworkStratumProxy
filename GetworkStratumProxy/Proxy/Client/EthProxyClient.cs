@@ -49,8 +49,7 @@ namespace GetworkStratumProxy.Proxy.Client
         /// </summary>
         internal async Task StartListeningAsync()
         {
-            using var networkStream = TcpClient.GetStream();
-            using var peekableStream = new PeekableNewLineDelimitedStream(networkStream);
+            using var peekableStream = new PeekableNewLineDelimitedStream(TcpClient.GetStream().Socket);
             string line = peekableStream.PeekLine().Replace(": ", ":");
 
             using var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(line.Contains("\"jsonrpc\":\"2.0\"") ? 2 : 1, 0) };
