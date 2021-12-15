@@ -1,4 +1,5 @@
 ﻿using GetworkStratumProxy.Extension;
+using GetworkStratumProxy.Network;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
 using StreamJsonRpc;
@@ -49,8 +50,11 @@ namespace GetworkStratumProxy.Proxy.Client
         internal async Task StartListeningAsync()
         {
             using var networkStream = TcpClient.GetStream();
-            using var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(1, 0) };
-            using var handler = new NewLineDelimitedMessageHandler(networkStream, networkStream, formatter);
+            using var peekableStream = new PeekableNewLineDelimitedStream(networkStream);
+            string line = peekableStream.PeekLine().Replace(": ", ":");
+
+            using var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(line.Contains("\"jsonrpc\":\"2.0\"") ? 2 : 1, 0) };
+            using var handler = new NewLineDelimitedMessageHandler(peekableStream, peekableStream, formatter);
             using var jsonRpc = new JsonRpc(handler, this);
 
             jsonRpc.StartListening();
@@ -67,7 +71,18 @@ namespace GetworkStratumProxy.Proxy.Client
                 var notifyJobResponse = new Rpc.EthProxy.NewJobNotification(e);
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
                     $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
-                Notify(notifyJobResponse);
+
+                try
+                {
+                    Notify(notifyJobResponse);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Background job writer stream disposed, unsubscribe here
+                    var node = sender as Node.BaseNode;
+                    node.NewJobReceived -= NewJobNotificationEvent;
+                    ConsoleHelper.Log(GetType().Name, $"Client {Endpoint} unsubscribed from jobs", LogLevel.Information);
+                }
             }
         }
 
