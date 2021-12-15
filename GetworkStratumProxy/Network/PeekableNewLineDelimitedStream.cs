@@ -100,9 +100,7 @@ namespace GetworkStratumProxy.Network
             ReadStreamBuffer.Seek(readStreamBufferPosition, SeekOrigin.Begin);
 
             byte[] bytes = ReadStreamBuffer.ToArray();
-            string line = Encoding.UTF8.GetString(bytes);
-            Console.WriteLine(line);
-            return line;
+            return Encoding.UTF8.GetString(bytes);
         }
     }
 }
