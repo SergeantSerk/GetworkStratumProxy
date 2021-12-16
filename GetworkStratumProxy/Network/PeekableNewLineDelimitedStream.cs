@@ -39,9 +39,7 @@ namespace GetworkStratumProxy.Network
             else
             {
                 // Read straight from NetworkStream
-                Console.WriteLine("yeet");
                 bytesRead = base.Read(buffer, offset, count);
-                Console.WriteLine("yote");
             }
 
             return bytesRead;
