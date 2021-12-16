@@ -58,7 +58,14 @@ namespace GetworkStratumProxy.Proxy
                     }
 
                     // Set off initialisation of new client and begin listening for new client
-                    _ = Task.Run(async () => await InitialiseTcpClientAsync(client));
+                    _ = Task.Run(async () => await InitialiseTcpClientAsync(client))
+                    .ContinueWith(_ =>
+                    {
+                        if (_.Exception != null)
+                        {
+                            ConsoleHelper.Log(GetType().Name, _.Exception.Message, LogLevel.Error);
+                        }
+                    }, TaskScheduler.Current);
                 }
             });
             _ = Task.Run(clientHandleLoopAction);
