@@ -61,14 +61,22 @@ namespace GetworkStratumProxy.Proxy
                     _ = Task.Run(async () => await InitialiseTcpClientAsync(client))
                     .ContinueWith(_ =>
                     {
-                        if (_.Exception != null)
+                        if (_.Exception != null && _.Exception.InnerException?.InnerException is SocketException e && e.ErrorCode != 10054)
                         {
-                            ConsoleHelper.Log(GetType().Name, _.Exception.Message, LogLevel.Error);
+                            // Ignore client side disconnection
+                            ConsoleHelper.Log(GetType().Name, _.Exception.ToString(), LogLevel.Error);
                         }
                     }, TaskScheduler.Current);
                 }
             });
-            _ = Task.Run(clientHandleLoopAction);
+            _ = Task.Run(clientHandleLoopAction)
+                .ContinueWith(_ =>
+                {
+                    if (_.Exception != null)
+                    {
+                        ConsoleHelper.Log(GetType().Name, _.Exception.ToString(), LogLevel.Error);
+                    }
+                }, TaskScheduler.Current);
         }
 
         private async Task InitialiseTcpClientAsync(TcpClient client)
