@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -9,11 +10,49 @@ namespace GetworkStratumProxy.Network
 {
     internal class PeekableNewLineDelimitedStream : NetworkStream
     {
-        private MemoryStream ReadStreamBuffer { get; }
+        private Encoding Encoding { get; }
+        private Queue<string> BufferedLines { get; }
 
-        public PeekableNewLineDelimitedStream(Socket socket) : base(socket)
+        public PeekableNewLineDelimitedStream(Socket socket) : this(socket, Encoding.UTF8)
         {
-            ReadStreamBuffer = new MemoryStream();
+
+        }
+
+        public PeekableNewLineDelimitedStream(Socket socket, Encoding encoding) : base(socket)
+        {
+            BufferedLines = new Queue<string>();
+            Encoding = encoding;
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int bytesRead;
+
+            // If any line of data exists in buffer
+            if (BufferedLines.Count > 0)
+            {
+                string line = BufferedLines.Dequeue();
+                byte[] lineBytes = Encoding.GetBytes(line);
+                Array.Copy(lineBytes, 0, buffer, offset, Math.Min(lineBytes.Length, count));
+                bytesRead = lineBytes.Length;
+            }
+            else
+            {
+                // Read straight from NetworkStream
+                Console.WriteLine("yeet");
+                bytesRead = base.Read(buffer, offset, count);
+                Console.WriteLine("yote");
+            }
+
+            return bytesRead;
+        }
+
+        public override int Read(Span<byte> buffer)
+        {
+            byte[] internalBuffer = new byte[buffer.Length];
+            int bytesRead = Read(internalBuffer, 0, internalBuffer.Length);
+            internalBuffer.CopyTo(buffer);
+            return bytesRead;
         }
 
         public override int ReadByte()
@@ -23,53 +62,9 @@ namespace GetworkStratumProxy.Network
             return buffer[0];
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            int bytesRead = 0;
-            // If any line of data exists in memory
-            if (ReadStreamBuffer.Position != ReadStreamBuffer.Length)
-            {
-                int current;
-                while (bytesRead < count && (current = ReadStreamBuffer.ReadByte()) != -1)
-                {
-                    if (bytesRead >= buffer.Length)
-                    {
-                        break;
-                    }
-
-                    buffer[offset + bytesRead] = (byte)current;
-                    bytesRead++;
-                }
-
-                // Clear internal buffer
-                ReadStreamBuffer.SetLength(0);
-            }
-            else
-            {
-                // ReadStreamBuffer did not fill buffer with enough data
-                // read more
-                byte[] networkBytes = new byte[count];
-                bytesRead = base.Read(networkBytes, offset, count);
-                for (int i = 0; i < networkBytes.Length; i++)
-                {
-                    buffer[offset + i] = networkBytes[i];
-                }
-            }
-
-            return bytesRead;
-        }
-
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             return await Task.Run(() => Read(buffer, offset, count), cancellationToken);
-        }
-
-        public override int Read(Span<byte> buffer)
-        {
-            byte[] internalBuffer = new byte[buffer.Length];
-            int bytesRead = Read(internalBuffer, 0, internalBuffer.Length);
-            internalBuffer.CopyTo(buffer);
-            return bytesRead;
         }
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
@@ -89,18 +84,11 @@ namespace GetworkStratumProxy.Network
 
         public string PeekLine()
         {
-            long readStreamBufferPosition = ReadStreamBuffer.Position;
-            int current;
-            while ((current = ReadByte()) != '\n')
-            {
-                ReadStreamBuffer.WriteByte((byte)current);
-            }
-            // Add line terminator
-            ReadStreamBuffer.WriteByte((byte)'\n');
-            ReadStreamBuffer.Seek(readStreamBufferPosition, SeekOrigin.Begin);
+            using var streamReader = new StreamReader(this, leaveOpen: true);
+            string line = streamReader.ReadLine() + '\n';   // Preserve newline character
+            BufferedLines.Enqueue(line);
 
-            byte[] bytes = ReadStreamBuffer.ToArray();
-            return Encoding.UTF8.GetString(bytes);
+            return line;
         }
     }
 }

@@ -1,11 +1,13 @@
 ﻿using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Network;
+using GetworkStratumProxy.Rpc;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
 using StreamJsonRpc;
 using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace GetworkStratumProxy.Proxy.Client
@@ -50,9 +52,9 @@ namespace GetworkStratumProxy.Proxy.Client
         internal async Task StartListeningAsync()
         {
             using var peekableStream = new PeekableNewLineDelimitedStream(TcpClient.GetStream().Socket);
-            string line = peekableStream.PeekLine().Replace(": ", ":");
+            var message = JsonSerializer.Deserialize<JsonRpcRequest>(peekableStream.PeekLine());
 
-            using var formatter = new JsonMessageFormatter { ProtocolVersion = new Version(line.Contains("\"jsonrpc\":\"2.0\"") ? 2 : 1, 0) };
+            using var formatter = new JsonMessageFormatter { ProtocolVersion = Version.Parse(message.JsonRpc ?? "1.0") };
             using var handler = new NewLineDelimitedMessageHandler(peekableStream, peekableStream, formatter);
             using var jsonRpc = new JsonRpc(handler, this);
 
