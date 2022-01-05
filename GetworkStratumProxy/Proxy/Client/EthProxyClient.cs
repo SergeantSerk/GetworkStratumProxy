@@ -17,33 +17,15 @@ namespace GetworkStratumProxy.Proxy.Client
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
 
-        public string[] CurrentJob { get; internal set; }
+        public EthWork CurrentEthWork { get; internal set; }
 
         public EthProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
         {
             var networkStream = TcpClient.GetStream();
-            BackgroundJobWriter = new StreamWriter(networkStream);
+            BackgroundWorkWriter = new StreamWriter(networkStream);
 
             GetWorkService = getWorkService;
             SubmitWorkService = submitWorkService;
-        }
-
-        internal bool IsSameJob(string[] job)
-        {
-            if (CurrentJob.Length != job.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < CurrentJob.Length; ++i)
-            {
-                if (CurrentJob[i] != job[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -64,25 +46,25 @@ namespace GetworkStratumProxy.Proxy.Client
             ConsoleHelper.Log(GetType().Name, $"RPC service stopped for {Endpoint}", LogLevel.Debug);
         }
 
-        internal void NewJobNotificationEvent(object sender, string[] e)
+        internal void NewWorkNotificationEvent(object sender, EthWork newEthWork)
         {
-            if (StratumState == StratumState.Subscribed && !IsSameJob(e))
+            if (StratumState == StratumState.Subscribed && !CurrentEthWork.Equals(newEthWork))
             {
-                CurrentJob = e;
-                var notifyJobResponse = new Rpc.EthProxy.NewJobNotification(e);
-                ConsoleHelper.Log(GetType().Name, $"Sending job " +
-                    $"({e[0][..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
+                CurrentEthWork = newEthWork;
+                var ethWorkNotification = new Rpc.EthProxy.NewEthWorkNotification(newEthWork);
+                ConsoleHelper.Log(GetType().Name, $"Sending work " +
+                    $"({newEthWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
 
                 try
                 {
-                    Notify(notifyJobResponse);
+                    Notify(ethWorkNotification);
                 }
                 catch (ObjectDisposedException)
                 {
-                    // Background job writer stream disposed, unsubscribe here
+                    // Background work writer stream disposed, unsubscribe here
                     var node = sender as Node.BaseNode;
-                    node.NewJobReceived -= NewJobNotificationEvent;
-                    ConsoleHelper.Log(GetType().Name, $"Client {Endpoint} unsubscribed from jobs", LogLevel.Information);
+                    node.NewWorkReceived -= NewWorkNotificationEvent;
+                    ConsoleHelper.Log(GetType().Name, $"Client {Endpoint} unsubscribed from new work", LogLevel.Information);
                 }
             }
         }
@@ -112,15 +94,15 @@ namespace GetworkStratumProxy.Proxy.Client
             ConsoleHelper.Log(GetType().Name, $"Miner getWork from {Endpoint}", LogLevel.Debug);
             StratumState = StratumState.Subscribed;
 
-            string[] job = await GetWorkService.SendRequestAsync();
-            CurrentJob = job;
+            string[] ethWorkRaw = await GetWorkService.SendRequestAsync();
+            var ethWork = new EthWork(ethWorkRaw);
+            CurrentEthWork = ethWork;
 
-            string headerHash = job[0];
-            ConsoleHelper.Log(GetType().Name, $"Sending latest job " +
-                $"({headerHash[..Constants.JobCharactersPrefixCount]}...) for {Endpoint}", LogLevel.Information);
+            ConsoleHelper.Log(GetType().Name, $"Sending latest work " +
+                $"({ethWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) for {Endpoint}", LogLevel.Information);
 
-            ConsoleHelper.Log(GetType().Name, $"Sending job to {Endpoint}", LogLevel.Debug);
-            return job;
+            ConsoleHelper.Log(GetType().Name, $"Sending work to {Endpoint}", LogLevel.Debug);
+            return ethWorkRaw;
         }
 
         [JsonRpcMethod("eth_submitHashrate")]
@@ -150,7 +132,7 @@ namespace GetworkStratumProxy.Proxy.Client
 
         public override void Dispose()
         {
-            BackgroundJobWriter.Dispose();
+            BackgroundWorkWriter.Dispose();
             TcpClient.Dispose();
         }
     }

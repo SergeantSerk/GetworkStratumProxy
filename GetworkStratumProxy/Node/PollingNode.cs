@@ -1,24 +1,25 @@
 ﻿using GetworkStratumProxy.Extension;
+using GetworkStratumProxy.Rpc;
 using System;
 using System.Timers;
 
 namespace GetworkStratumProxy.Node
 {
     /// <summary>
-    /// Interval-based job polling system with work polled from node.
+    /// Interval-based work polling system with work polled from node.
     /// </summary>
     public sealed class PollingNode : BaseNode
     {
         private Timer Timer { get; set; }
         public int PollingInterval { get; private set; }
 
-        internal override event EventHandler<string[]> NewJobReceived;
+        internal override event EventHandler<EthWork> NewWorkReceived;
 
         /// <summary>
-        /// Initialises a job polling subsystem, initially disabled and with specified polling interval, polling for jobs from node RPC.
+        /// Initialises a work polling subsystem, initially disabled and with specified polling interval, polling for work from node RPC.
         /// </summary>
         /// <param name="rpcUri">Node RPC url.</param>
-        /// <param name="pollingInterval">Intervals, in milliseconds, to poll jobs in.</param>
+        /// <param name="pollingInterval">Intervals, in milliseconds, to poll work in.</param>
         public PollingNode(Uri rpcUri, int pollingInterval) : base(rpcUri)
         {
             Timer = new Timer(pollingInterval)
@@ -38,12 +39,13 @@ namespace GetworkStratumProxy.Node
                 return;
             }
 
-            var receivedJob = await Web3.Eth.Mining.GetWork.SendRequestAsync();
-            if (TryUpdateWork(receivedJob))
+            string[] receivedEthWorkRaw = await Web3.Eth.Mining.GetWork.SendRequestAsync();
+            var receivedEthWork = new EthWork(receivedEthWorkRaw);
+            if (TryUpdateWork(receivedEthWork))
             {
-                ConsoleHelper.Log(GetType().Name, $"Received latest job " +
-                    $"({LatestJob[0][..Constants.JobCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
-                NewJobReceived?.Invoke(this, LatestJob);
+                ConsoleHelper.Log(GetType().Name, $"Received latest work " +
+                    $"({receivedEthWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
+                NewWorkReceived?.Invoke(this, LatestEthWork);
             }
         }
 

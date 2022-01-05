@@ -5,7 +5,7 @@ namespace GetworkStratumProxy
 {
     internal class Constants
     {
-        public const int JobCharactersPrefixCount = 10;
+        public const int WorkHeaderCharactersPrefixCount = 10;
 
         private static readonly BigInteger MaxTarget = BigInteger.Pow(16, 64) - 1;
         private static readonly BigInteger DifficultyDenom = BigInteger.Pow(2, 32);

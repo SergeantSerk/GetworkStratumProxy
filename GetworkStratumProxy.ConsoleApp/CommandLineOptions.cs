@@ -9,7 +9,7 @@ namespace GetworkStratumProxy.ConsoleApp
         [Option('r', "rpc", Required = true, HelpText = "RPC endpoint URI for the node to getWork from, such as http://127.0.0.1:8545/")]
         public Uri RpcUri { get; set; }
 
-        [Option("poll-interval", Required = false, Default = 500, HelpText = "Interval to poll the getWork jobs, in milliseconds")]
+        [Option("poll-interval", Required = false, Default = 500, HelpText = "Interval to poll for new work using getWork, in milliseconds")]
         public int PollInterval { get; set; }
 
         [Option('a', "address", Required = false, Default = "0.0.0.0", HelpText = "IP address to listen stratum requests from e.g. 0.0.0.0")]

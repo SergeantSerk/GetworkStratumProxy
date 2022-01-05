@@ -21,7 +21,7 @@ namespace GetworkStratumProxy.Proxy.Client
         public EndPoint Endpoint { get; private set; }
         public StratumState StratumState { get; protected set; }
 
-        protected StreamWriter BackgroundJobWriter { get; set; }
+        protected StreamWriter BackgroundWorkWriter { get; set; }
 
         public BaseProxyClient(TcpClient tcpClient)
         {
@@ -34,8 +34,8 @@ namespace GetworkStratumProxy.Proxy.Client
         {
             var notificationString = JsonSerializer.Serialize(notification);
             ConsoleHelper.Log(GetType().Name, $"(O) {notificationString} -> {Endpoint}", LogLevel.Debug);
-            BackgroundJobWriter.WriteLine(notificationString);
-            BackgroundJobWriter.Flush();
+            BackgroundWorkWriter.WriteLine(notificationString);
+            BackgroundWorkWriter.Flush();
         }
 
         public abstract void Dispose();

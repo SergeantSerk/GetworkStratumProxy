@@ -21,10 +21,10 @@ namespace GetworkStratumProxy.Proxy
         {
             var endpoint = client.Client.RemoteEndPoint;
             using EthProxyClient proxyClient = GetClientOrNew(client);
-            Node.NewJobReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
+            Node.NewWorkReceived += proxyClient.NewWorkNotificationEvent;  // Subscribe to new work
             await proxyClient.StartListeningAsync(); // Blocking listen
-            Node.NewJobReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
-            ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
+            Node.NewWorkReceived -= proxyClient.NewWorkNotificationEvent;  // Unsubscribe
+            ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from receiving new work", LogLevel.Information);
         }
 
         private EthProxyClient GetClientOrNew(TcpClient tcpClient)
