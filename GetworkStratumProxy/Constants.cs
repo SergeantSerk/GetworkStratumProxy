@@ -2,6 +2,6 @@
 {
     internal class Constants
     {
-        public const int JobCharactersPrefixCount = 10;
+        public const int WorkHeaderCharactersPrefixCount = 10;
     }
 }

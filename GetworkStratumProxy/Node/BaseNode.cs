@@ -1,4 +1,5 @@
-﻿using Nethereum.Web3;
+﻿using GetworkStratumProxy.Rpc;
+using Nethereum.Web3;
 using System;
 
 namespace GetworkStratumProxy.Node
@@ -10,11 +11,11 @@ namespace GetworkStratumProxy.Node
         internal IWeb3 Web3 { get; private set; }
 
         /// <summary>
-        /// Hold latest job for tracking incoming new jobs
+        /// Track latest work for tracking incoming new works
         /// </summary>
-        protected string[] LatestJob { get; set; }
+        protected EthWork LatestEthWork { get; set; }
 
-        internal abstract event EventHandler<string[]> NewJobReceived;
+        internal abstract event EventHandler<EthWork> NewWorkReceived;
 
         public BaseNode(Uri rpcUri)
         {
@@ -26,28 +27,21 @@ namespace GetworkStratumProxy.Node
         public abstract void Stop();
 
         /// <summary>
-        /// Update tracked job with newly received job and return update result.
+        /// Update tracked work with newly received work and return update result.
         /// </summary>
-        /// <param name="newJob">New job received from node.</param>
-        /// <returns>Returns <see langword="true"/> if job is different from previous tracked job, else <see langword="false"/>.</returns>
-        protected bool TryUpdateWork(string[] newJob)
+        /// <param name="ethWork">Work to compare and update against current tracked work.</param>
+        /// <returns>Returns <see langword="true"/> if work is different from previous tracked work, else <see langword="false"/>.</returns>
+        protected bool TryUpdateWork(EthWork ethWork)
         {
-            if (LatestJob == null || LatestJob.Length != newJob.Length)
+            if (LatestEthWork == null || !LatestEthWork.Equals(ethWork))
             {
-                LatestJob = newJob;
+                LatestEthWork = ethWork;
                 return true;
             }
-
-            for (int i = 0; i < LatestJob.Length; ++i)
+            else
             {
-                if (LatestJob[i] != newJob[i])
-                {
-                    LatestJob = newJob;
-                    return true;
-                }
+                return false;
             }
-
-            return false;
         }
 
         protected virtual void Dispose(bool disposing)
@@ -60,7 +54,7 @@ namespace GetworkStratumProxy.Node
                 }
 
                 Web3 = null;
-                LatestJob = null;
+                LatestEthWork = null;
                 DisposedValue = true;
             }
         }
