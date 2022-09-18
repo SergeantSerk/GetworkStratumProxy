@@ -19,7 +19,7 @@ namespace GetworkStratumProxy.Proxy.Client
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
 
-        private int CurrentJobId { get; set; } = 0;
+        private HexBigInteger CurrentJobId { get; set; } = new HexBigInteger(0);
         private bool XNSub { get; set; } = false;
         private bool CanAcceptJob { get; set; } = false;
 
@@ -69,7 +69,8 @@ namespace GetworkStratumProxy.Proxy.Client
                     PreviousDifficulty = difficulty;
                 }
 
-                var miningNotifyNotification = new MiningNotifyNotification(CurrentJobId++, seedHash, headerHash, clearJobQueue);
+                CurrentJobId = (CurrentJobId.Value++).ToHexBigInteger();
+                var miningNotifyNotification = new MiningNotifyNotification(CurrentJobId, seedHash, headerHash, clearJobQueue);
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
                     $"({headerHash[..Constants.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
                 Notify(miningNotifyNotification);
