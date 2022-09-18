@@ -27,7 +27,7 @@ namespace GetworkStratumProxy.Proxy.Client
         public NicehashProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
         {
             var networkStream = TcpClient.GetStream();
-            BackgroundJobWriter = new StreamWriter(networkStream);
+            BackgroundWorkWriter = new StreamWriter(networkStream);
 
             GetWorkService = getWorkService;
             SubmitWorkService = submitWorkService;
@@ -70,7 +70,7 @@ namespace GetworkStratumProxy.Proxy.Client
 
                 var miningNotifyNotification = new MiningNotifyNotification(CurrentJobId++, seedHash, headerHash, clearJobQueue);
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
-                    $"({headerHash[..Constants.JobCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
+                    $"({headerHash[..Constants.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
                 Notify(miningNotifyNotification);
             }
         }
