@@ -1,4 +1,5 @@
 ﻿using GetworkStratumProxy.Extension;
+using GetworkStratumProxy.Rpc;
 using GetworkStratumProxy.Rpc.Nicehash;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
@@ -48,14 +49,14 @@ namespace GetworkStratumProxy.Proxy.Client
             ConsoleHelper.Log(GetType().Name, $"RPC service stopped for {Endpoint}", LogLevel.Debug);
         }
 
-        internal void NewJobNotificationEvent(object sender, string[] e)
+        internal void NewJobNotificationEvent(object sender, EthWork e)
         {
             if (StratumState.HasFlag(StratumState.Authorised) && StratumState.HasFlag(StratumState.Subscribed))
             {
                 // e[] = { headerHash, seedHash, Target }
-                string headerHash = e[0];
-                string seedHash = e[1];
-                string target = e[2];
+                string headerHash = e.Header.HexValue;
+                string seedHash = e.Seed.HexValue;
+                string target = e.Target.HexValue;
                 bool clearJobQueue = true;
 
                 decimal difficulty = Constants.GetDifficultyFromTarget(new HexBigInteger(target));

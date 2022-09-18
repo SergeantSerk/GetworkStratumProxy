@@ -21,9 +21,9 @@ namespace GetworkStratumProxy.Proxy
         {
             var endpoint = client.Client.RemoteEndPoint;
             using NicehashProxyClient proxyClient = GetClientOrNew(client);
-            Node.NewJobReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
+            Node.NewWorkReceived += proxyClient.NewJobNotificationEvent;  // Subscribe to new jobs
             await proxyClient.StartListeningAsync(); // Blocking listen
-            Node.NewJobReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
+            Node.NewWorkReceived -= proxyClient.NewJobNotificationEvent;  // Unsubscribe
             ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from jobs", LogLevel.Information);
         }
 
