@@ -13,7 +13,7 @@ namespace GetworkStratumProxy.Extension
 
     public static class ConsoleHelper
     {
-        private static object _lock = new object();
+        private static readonly object _lock = new();
 
         public static bool IsVerbose { get; set; } = false;
 
