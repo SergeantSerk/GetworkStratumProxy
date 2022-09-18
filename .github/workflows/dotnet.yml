@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -29,9 +29,9 @@ jobs:
       uses: actions/upload-artifact@v2.3.0
       with:
         # Artifact name
-        name: gsp-net5.0.zip
+        name: gsp-net6.0.zip
         # A file, directory or wildcard pattern that describes what to upload
-        path: GetworkStratumProxy.ConsoleApp/bin/Release/net5.0
+        path: GetworkStratumProxy.ConsoleApp/bin/Release/net6.0
         # The desired behavior if no files are found using the provided path.
         
         if-no-files-found: warn
