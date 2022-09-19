@@ -21,7 +21,10 @@ namespace GetworkStratumProxy.Proxy.Client
 
         private HexBigInteger CurrentJobId { get; set; } = new HexBigInteger(0);
         private bool XNSub { get; set; } = false;
-        private bool CanAcceptJob { get; set; } = false;
+
+        private event EventHandler CanAcceptWorkEvent;
+
+        private EthWork CurrentWork;
 
         private decimal PreviousDifficulty { get; set; } = -1;
 
@@ -32,6 +35,16 @@ namespace GetworkStratumProxy.Proxy.Client
 
             GetWorkService = getWorkService;
             SubmitWorkService = submitWorkService;
+
+            CanAcceptWorkEvent += (o, e) =>
+            {
+                // TO-DO: very hacky workaround, not a surefire fix for race condition
+                System.Threading.Thread.Sleep(1000);    // Hold this event so authorise can go through
+                // Fix for when miner subscribes but does not get work refresh triggered
+                string[] ethGetWorkRaw = getWorkService.SendRequestAsync().Result;
+                var ethWork = new EthWork(ethGetWorkRaw);
+                NewJobNotificationEvent(null, ethWork);
+            };
         }
 
         /// <summary>
@@ -53,10 +66,12 @@ namespace GetworkStratumProxy.Proxy.Client
         {
             if (StratumState.HasFlag(StratumState.Authorised) && StratumState.HasFlag(StratumState.Subscribed))
             {
+                CurrentWork = e;
+
                 // e[] = { headerHash, seedHash, Target }
-                string headerHash = e.Header.HexValue;
-                string seedHash = e.Seed.HexValue;
-                string target = e.Target.HexValue;
+                string headerHash = CurrentWork.Header.HexValue;
+                string seedHash = CurrentWork.Seed.HexValue;
+                string target = CurrentWork.Target.HexValue;
                 bool clearJobQueue = true;
 
                 decimal difficulty = Constants.GetDifficultyFromTarget(new HexBigInteger(target));
@@ -113,6 +128,8 @@ namespace GetworkStratumProxy.Proxy.Client
             ConsoleHelper.Log(GetType().Name, $"Miner {Endpoint} logged in successfully", LogLevel.Information);
 
             ConsoleHelper.Log(GetType().Name, $"Sending login response to {Endpoint}", LogLevel.Debug);
+
+            CanAcceptWorkEvent(null, null); // Trigger sending of work
             return StratumState.HasFlag(StratumState.Authorised) &&
                 StratumState.HasFlag(StratumState.Subscribed);
         }
@@ -123,6 +140,12 @@ namespace GetworkStratumProxy.Proxy.Client
             ConsoleHelper.Log(GetType().Name, $"Miner {Endpoint} requested XNSUB", LogLevel.Debug);
             XNSub = true;
             return true;
+        }
+
+        [JsonRpcMethod("mining.submit")]
+        public bool Submit(string minerUser, string extraNonce, string foundNonce)
+        {
+            throw new NotImplementedException();
         }
 
         public override void Dispose()
