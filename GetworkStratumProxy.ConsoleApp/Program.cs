@@ -1,7 +1,9 @@
 ﻿using CommandLine;
 using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Node;
-using GetworkStratumProxy.Proxy;
+using GetworkStratumProxy.Node.Eth;
+using GetworkStratumProxy.Proxy.Server;
+using GetworkStratumProxy.Proxy.Server.Eth;
 using System;
 using System.Threading.Tasks;
 
@@ -32,8 +34,8 @@ namespace GetworkStratumProxy.ConsoleApp
                 IsRunning = false;
             };
 
-            using (BaseNode pollingNode = new PollingNode(options.RpcUri, options.PollInterval))
-            using (IProxy proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort))
+            using (BaseEthNode pollingNode = new PollingEthNode(options.RpcUri, options.PollInterval))
+            using (IProxy proxy = new GetworkEthProxy(pollingNode, options.StratumIPAddress, options.StratumPort))
             {
                 pollingNode.Start();
                 proxy.Start();

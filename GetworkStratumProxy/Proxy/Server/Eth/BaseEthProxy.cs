@@ -1,5 +1,5 @@
 ﻿using GetworkStratumProxy.Extension;
-using GetworkStratumProxy.Node;
+using GetworkStratumProxy.Node.Eth;
 using GetworkStratumProxy.Proxy.Client;
 using System;
 using System.Collections.Concurrent;
@@ -7,19 +7,19 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Proxy
+namespace GetworkStratumProxy.Proxy.Server.Eth
 {
     public abstract class BaseProxy<T> : IProxy, IDisposable where T : BaseProxyClient
     {
         private bool disposedValue;
 
-        protected BaseNode Node { get; private set; }
+        protected BaseEthNode Node { get; private set; }
 
         public abstract bool IsListening { get; protected set; }
         protected abstract TcpListener Server { get; set; }
         protected ConcurrentDictionary<EndPoint, T> Clients { get; private set; }
 
-        public BaseProxy(BaseNode node, IPAddress address, int port)
+        public BaseProxy(BaseEthNode node, IPAddress address, int port)
         {
             Node = node;
             IsListening = false;

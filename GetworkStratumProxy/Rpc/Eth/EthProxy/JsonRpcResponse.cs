@@ -2,7 +2,7 @@
 
 namespace GetworkStratumProxy.Rpc.EthProxy
 {
-    public class JsonRpcResponse : Rpc.JsonRpcResponse
+    public class JsonRpcResponse : Eth.JsonRpcResponse
     {
         [JsonPropertyName("result")]
         public object[] Result { get; set; }

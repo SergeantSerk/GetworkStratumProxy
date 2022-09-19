@@ -1,5 +1,6 @@
 ﻿using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Network;
+using GetworkStratumProxy.Node.Eth;
 using GetworkStratumProxy.Rpc;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
@@ -10,9 +11,9 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Proxy.Client
+namespace GetworkStratumProxy.Proxy.Client.Eth
 {
-    public sealed class EthProxyClient : BaseProxyClient
+    public sealed class EthProxyClient : BaseEthProxyClient
     {
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
@@ -62,7 +63,7 @@ namespace GetworkStratumProxy.Proxy.Client
                 catch (ObjectDisposedException)
                 {
                     // Background work writer stream disposed, unsubscribe here
-                    var node = sender as Node.BaseNode;
+                    var node = sender as BaseEthNode;
                     node.NewWorkReceived -= NewWorkNotificationEvent;
                     ConsoleHelper.Log(GetType().Name, $"Client {Endpoint} unsubscribed from new work", LogLevel.Information);
                 }

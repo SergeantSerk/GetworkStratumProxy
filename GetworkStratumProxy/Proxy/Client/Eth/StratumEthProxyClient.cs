@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace GetworkStratumProxy.Proxy.Client
+namespace GetworkStratumProxy.Proxy.Client.Eth
 {
-    public sealed class NicehashProxyClient : BaseProxyClient
+    public sealed class StratumProxyClient : BaseProxyClient
     {
-        public NicehashProxyClient(TcpClient tcpClient) : base(tcpClient)
+        public StratumProxyClient(TcpClient tcpClient) : base(tcpClient)
         {
         }
 

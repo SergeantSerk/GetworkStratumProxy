@@ -1,10 +1,10 @@
-﻿using GetworkStratumProxy.Rpc;
+﻿using GetworkStratumProxy.Rpc.Eth;
 using Nethereum.Web3;
 using System;
 
-namespace GetworkStratumProxy.Node
+namespace GetworkStratumProxy.Node.Eth
 {
-    public abstract class BaseNode : INode, IDisposable
+    public abstract class BaseEthNode : INode, IDisposable
     {
         protected bool DisposedValue { get; private set; }
 
@@ -17,7 +17,7 @@ namespace GetworkStratumProxy.Node
 
         internal abstract event EventHandler<EthWork> NewWorkReceived;
 
-        public BaseNode(Uri rpcUri)
+        public BaseEthNode(Uri rpcUri)
         {
             Web3 = new Web3(rpcUri.AbsoluteUri);
         }

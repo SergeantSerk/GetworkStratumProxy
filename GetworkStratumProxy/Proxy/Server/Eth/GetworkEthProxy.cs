@@ -1,18 +1,18 @@
 ﻿using GetworkStratumProxy.Extension;
-using GetworkStratumProxy.Node;
-using GetworkStratumProxy.Proxy.Client;
+using GetworkStratumProxy.Node.Eth;
+using GetworkStratumProxy.Proxy.Client.Eth;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Proxy
+namespace GetworkStratumProxy.Proxy.Server.Eth
 {
-    public sealed class EthProxy : BaseProxy<EthProxyClient>
+    public sealed class EthProxy : BaseEthProxy<GetworkEthProxyClient>
     {
         public override bool IsListening { get; protected set; }
         protected override TcpListener Server { get; set; }
 
-        public EthProxy(BaseNode node, IPAddress address, int port) : base(node, address, port)
+        public EthProxy(BaseEthNode node, IPAddress address, int port) : base(node, address, port)
         {
 
         }
@@ -20,20 +20,20 @@ namespace GetworkStratumProxy.Proxy
         protected override async Task BeginClientSessionAsync(TcpClient client)
         {
             var endpoint = client.Client.RemoteEndPoint;
-            using EthProxyClient proxyClient = GetClientOrNew(client);
+            using GetworkEthProxyClient proxyClient = GetClientOrNew(client);
             Node.NewWorkReceived += proxyClient.NewWorkNotificationEvent;  // Subscribe to new work
             await proxyClient.StartListeningAsync(); // Blocking listen
             Node.NewWorkReceived -= proxyClient.NewWorkNotificationEvent;  // Unsubscribe
             ConsoleHelper.Log(GetType().Name, $"Client {endpoint} unsubscribed from receiving new work", LogLevel.Information);
         }
 
-        private EthProxyClient GetClientOrNew(TcpClient tcpClient)
+        private GetworkEthProxyClient GetClientOrNew(TcpClient tcpClient)
         {
-            if (!Clients.TryGetValue(tcpClient.Client.RemoteEndPoint, out EthProxyClient ethProxyClient))
+            if (!Clients.TryGetValue(tcpClient.Client.RemoteEndPoint, out GetworkEthProxyClient ethProxyClient))
             {
                 // Remote endpoint not registered, add new client
                 ConsoleHelper.Log(GetType().Name, $"Registered new client {tcpClient.Client.RemoteEndPoint}", LogLevel.Debug);
-                ethProxyClient = new EthProxyClient(tcpClient, Node.Web3.Eth.Mining.GetWork, Node.Web3.Eth.Mining.SubmitWork);
+                ethProxyClient = new GetworkEthProxyClient(tcpClient, Node.Web3.Eth.Mining.GetWork, Node.Web3.Eth.Mining.SubmitWork);
                 Clients.TryAdd(tcpClient.Client.RemoteEndPoint, ethProxyClient);
             }
             return ethProxyClient;
