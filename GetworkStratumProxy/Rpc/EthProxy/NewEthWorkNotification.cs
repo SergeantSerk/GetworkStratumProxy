@@ -1,6 +1,4 @@
-﻿using GetworkStratumProxy.Rpc.Eth;
-
-namespace GetworkStratumProxy.Rpc.EthProxy
+﻿namespace GetworkStratumProxy.Rpc.EthProxy
 {
     public sealed class NewEthWorkNotification : JsonRpcNotification
     {

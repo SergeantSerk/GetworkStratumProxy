@@ -1,6 +1,6 @@
 ﻿using Nethereum.Hex.HexTypes;
 
-namespace GetworkStratumProxy.Rpc.Eth
+namespace GetworkStratumProxy.Rpc
 {
     public class EthWork
     {

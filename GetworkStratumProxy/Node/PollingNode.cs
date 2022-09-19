@@ -1,15 +1,14 @@
 ﻿using GetworkStratumProxy.Extension;
-using GetworkStratumProxy.Rpc.Eth;
-using GetworkStratumProxy.Utilities;
+using GetworkStratumProxy.Rpc;
 using System;
 using System.Timers;
 
-namespace GetworkStratumProxy.Node.Eth
+namespace GetworkStratumProxy.Node
 {
     /// <summary>
     /// Interval-based work polling system with work polled from node.
     /// </summary>
-    public sealed class PollingEthNode : BaseEthNode
+    public sealed class PollingNode : BaseNode
     {
         private Timer Timer { get; set; }
         public int PollingInterval { get; private set; }
@@ -21,7 +20,7 @@ namespace GetworkStratumProxy.Node.Eth
         /// </summary>
         /// <param name="rpcUri">Node RPC url.</param>
         /// <param name="pollingInterval">Intervals, in milliseconds, to poll work in.</param>
-        public PollingEthNode(Uri rpcUri, int pollingInterval) : base(rpcUri)
+        public PollingNode(Uri rpcUri, int pollingInterval) : base(rpcUri)
         {
             Timer = new Timer(pollingInterval)
             {

@@ -1,18 +1,18 @@
-﻿using GetworkStratumProxy.Node.Eth;
-using GetworkStratumProxy.Proxy.Client.Eth;
+﻿using GetworkStratumProxy.Node;
+using GetworkStratumProxy.Proxy.Client;
 using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Proxy.Server.Eth
+namespace GetworkStratumProxy.Proxy
 {
-    public class StratumProxy : BaseEthProxy<StratumEthProxyClient>
+    public class NicehashProxy : BaseProxy<NicehashProxyClient>
     {
         public override bool IsListening { get; protected set; }
         protected override TcpListener Server { get; set; }
 
-        public StratumProxy(BaseEthNode node, IPAddress address, int port) : base(node, address, port)
+        public NicehashProxy(BaseNode node, IPAddress address, int port) : base(node, address, port)
         {
             throw new NotImplementedException();
         }

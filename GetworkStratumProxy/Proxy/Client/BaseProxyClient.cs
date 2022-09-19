@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 
-namespace GetworkStratumProxy.Proxy.Client.Eth
+namespace GetworkStratumProxy.Proxy.Client
 {
     public enum StratumState
     {

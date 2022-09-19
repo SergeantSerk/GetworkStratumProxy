@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GetworkStratumProxy.Proxy.Server
+namespace GetworkStratumProxy.Proxy
 {
     public interface IProxy : IDisposable
     {

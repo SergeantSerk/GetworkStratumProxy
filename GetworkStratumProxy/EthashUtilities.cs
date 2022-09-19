@@ -1,7 +1,7 @@
 ﻿using Nethereum.Hex.HexTypes;
 using System.Numerics;
 
-namespace GetworkStratumProxy.Utilities
+namespace GetworkStratumProxy
 {
     internal class EthashUtilities
     {
