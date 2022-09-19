@@ -1,7 +1,7 @@
 ﻿using GetworkStratumProxy.Rpc.Eth;
 using System;
 
-namespace GetworkStratumProxy.EventBus
+namespace GetworkStratumProxy.Observer
 {
     internal class Observer : IObserver<Payload>
     {

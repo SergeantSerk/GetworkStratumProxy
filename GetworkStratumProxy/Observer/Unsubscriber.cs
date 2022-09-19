@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace GetworkStratumProxy.EventBus
+namespace GetworkStratumProxy.Observer
 {
     internal class Unsubscriber : IDisposable
     {
