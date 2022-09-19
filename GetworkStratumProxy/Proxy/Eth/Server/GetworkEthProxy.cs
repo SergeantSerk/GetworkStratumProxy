@@ -9,9 +9,6 @@ namespace GetworkStratumProxy.Proxy.Eth.Server
 {
     public sealed class GetworkEthProxy : BaseEthProxy<GetworkEthProxyClient>
     {
-        public override bool IsListening { get; protected set; }
-        protected override TcpListener Server { get; set; }
-
         public GetworkEthProxy(BaseEthNode node, IPAddress address, int port) : base(node, address, port)
         {
 

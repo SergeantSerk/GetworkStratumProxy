@@ -9,9 +9,6 @@ namespace GetworkStratumProxy.Proxy.Eth.Server
 {
     public class NicehashEthProxy : BaseEthProxy<NicehashEthProxyClient>
     {
-        public override bool IsListening { get; protected set; }
-        protected override TcpListener Server { get; set; }
-
         public NicehashEthProxy(BaseEthNode node, IPAddress address, int port) : base(node, address, port)
         {
             throw new NotImplementedException();

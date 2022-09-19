@@ -6,8 +6,11 @@ namespace GetworkStratumProxy.Node.Eth
 {
     public abstract class BaseEthNode : INode, IDisposable
     {
-        protected bool DisposedValue { get; private set; }
+        internal abstract event EventHandler<EthWork> NewWorkReceived;
+        public abstract void Start();
+        public abstract void Stop();
 
+        protected bool DisposedValue { get; private set; }
         internal IWeb3 Web3 { get; private set; }
 
         /// <summary>
@@ -15,16 +18,10 @@ namespace GetworkStratumProxy.Node.Eth
         /// </summary>
         protected EthWork LatestEthWork { get; set; }
 
-        internal abstract event EventHandler<EthWork> NewWorkReceived;
-
         public BaseEthNode(Uri rpcUri)
         {
             Web3 = new Web3(rpcUri.AbsoluteUri);
         }
-
-        public abstract void Start();
-
-        public abstract void Stop();
 
         /// <summary>
         /// Update tracked work with newly received work and return update result.

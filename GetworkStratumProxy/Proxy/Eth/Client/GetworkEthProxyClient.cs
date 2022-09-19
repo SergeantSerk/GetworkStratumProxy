@@ -16,8 +16,8 @@ namespace GetworkStratumProxy.Proxy.Eth.Client
 {
     public sealed class GetworkEthProxyClient : BaseEthProxyClient
     {
-        private IEthGetWork GetWorkService { get; set; }
-        private IEthSubmitWork SubmitWorkService { get; set; }
+        private IEthGetWork GetWorkService { get; }
+        private IEthSubmitWork SubmitWorkService { get; }
 
         public EthWork CurrentEthWork { get; internal set; }
 
@@ -90,7 +90,7 @@ namespace GetworkStratumProxy.Proxy.Eth.Client
             if (StratumState == StratumState.Unauthorised)
             {
                 ConsoleHelper.Log(GetType().Name, $"Miner {Endpoint} was not authorised", LogLevel.Warning);
-                throw new UnauthorizedAccessException("Client is not logged in.");
+                throw new UnauthorizedAccessException("Client is not authorised.");
             }
 
             ConsoleHelper.Log(GetType().Name, $"Miner getWork from {Endpoint}", LogLevel.Debug);
@@ -104,7 +104,7 @@ namespace GetworkStratumProxy.Proxy.Eth.Client
                 $"({ethWork.Header.HexValue[..EthashUtilities.WorkHeaderCharactersPrefixCount]}...) for {Endpoint}", LogLevel.Information);
 
             ConsoleHelper.Log(GetType().Name, $"Sending work to {Endpoint}", LogLevel.Debug);
-            return ethWorkRaw;
+            return CurrentEthWork.ToArray();
         }
 
         [JsonRpcMethod("eth_submitHashrate")]

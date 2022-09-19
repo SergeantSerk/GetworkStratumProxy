@@ -15,8 +15,8 @@ namespace GetworkStratumProxy.Proxy.Eth.Server
 
         protected BaseEthNode Node { get; private set; }
 
-        public abstract bool IsListening { get; protected set; }
-        protected abstract TcpListener Server { get; set; }
+        public bool IsListening { get; protected set; }
+        protected TcpListener Server { get; private set; }
         protected ConcurrentDictionary<EndPoint, T> Clients { get; private set; }
 
         public BaseEthProxy(BaseEthNode node, IPAddress address, int port)

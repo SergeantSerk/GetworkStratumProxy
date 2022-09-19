@@ -7,6 +7,7 @@ namespace GetworkStratumProxy.Proxy.Eth.Client
     {
         public NicehashEthProxyClient(TcpClient tcpClient) : base(tcpClient)
         {
+            throw new NotImplementedException();
         }
 
         public override void Dispose()
