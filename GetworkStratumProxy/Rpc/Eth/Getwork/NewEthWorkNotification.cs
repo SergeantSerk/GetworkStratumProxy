@@ -1,4 +1,4 @@
-﻿namespace GetworkStratumProxy.Rpc.EthProxy
+﻿namespace GetworkStratumProxy.Rpc.Eth.Getwork
 {
     public sealed class NewEthWorkNotification : JsonRpcNotification
     {

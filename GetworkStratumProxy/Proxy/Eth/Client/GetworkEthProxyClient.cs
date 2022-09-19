@@ -1,6 +1,8 @@
 ﻿using GetworkStratumProxy.Extension;
 using GetworkStratumProxy.Network;
-using GetworkStratumProxy.Rpc;
+using GetworkStratumProxy.Node.Eth;
+using GetworkStratumProxy.Rpc.Eth;
+using GetworkStratumProxy.Utilities;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.Mining;
 using StreamJsonRpc;
@@ -10,16 +12,16 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace GetworkStratumProxy.Proxy.Client
+namespace GetworkStratumProxy.Proxy.Eth.Client
 {
-    public sealed class EthProxyClient : BaseProxyClient
+    public sealed class GetworkEthProxyClient : BaseEthProxyClient
     {
         private IEthGetWork GetWorkService { get; set; }
         private IEthSubmitWork SubmitWorkService { get; set; }
 
         public EthWork CurrentEthWork { get; internal set; }
 
-        public EthProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
+        public GetworkEthProxyClient(TcpClient tcpClient, IEthGetWork getWorkService, IEthSubmitWork submitWorkService) : base(tcpClient)
         {
             var networkStream = TcpClient.GetStream();
             BackgroundWorkWriter = new StreamWriter(networkStream);
@@ -51,7 +53,7 @@ namespace GetworkStratumProxy.Proxy.Client
             if (StratumState == StratumState.Subscribed && !CurrentEthWork.Equals(newEthWork))
             {
                 CurrentEthWork = newEthWork;
-                var ethWorkNotification = new Rpc.EthProxy.NewEthWorkNotification(newEthWork);
+                var ethWorkNotification = new Rpc.Eth.Getwork.NewEthWorkNotification(newEthWork);
                 ConsoleHelper.Log(GetType().Name, $"Sending work " +
                     $"({newEthWork.Header.HexValue[..EthashUtilities.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
 
@@ -62,7 +64,7 @@ namespace GetworkStratumProxy.Proxy.Client
                 catch (ObjectDisposedException)
                 {
                     // Background work writer stream disposed, unsubscribe here
-                    var node = sender as Node.BaseNode;
+                    var node = sender as BaseEthNode;
                     node.NewWorkReceived -= NewWorkNotificationEvent;
                     ConsoleHelper.Log(GetType().Name, $"Client {Endpoint} unsubscribed from new work", LogLevel.Information);
                 }

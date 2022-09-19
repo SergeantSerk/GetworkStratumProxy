@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace GetworkStratumProxy.Rpc
+namespace GetworkStratumProxy.Rpc.Eth
 {
     internal class JsonRpcRequest : JsonRpcMessage
     {

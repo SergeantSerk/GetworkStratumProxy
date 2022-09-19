@@ -1,12 +1,12 @@
 ﻿using GetworkStratumProxy.Extension;
-using GetworkStratumProxy.Rpc;
+using GetworkStratumProxy.Rpc.Eth;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 
-namespace GetworkStratumProxy.Proxy.Client
+namespace GetworkStratumProxy.Proxy.Eth.Client
 {
     public enum StratumState
     {
@@ -15,7 +15,7 @@ namespace GetworkStratumProxy.Proxy.Client
         Subscribed
     }
 
-    public abstract class BaseProxyClient : IDisposable
+    public abstract class BaseEthProxyClient : IDisposable
     {
         public TcpClient TcpClient { get; protected set; }
         public EndPoint Endpoint { get; private set; }
@@ -23,7 +23,7 @@ namespace GetworkStratumProxy.Proxy.Client
 
         protected StreamWriter BackgroundWorkWriter { get; set; }
 
-        public BaseProxyClient(TcpClient tcpClient)
+        public BaseEthProxyClient(TcpClient tcpClient)
         {
             TcpClient = tcpClient;
             Endpoint = tcpClient.Client.RemoteEndPoint;
