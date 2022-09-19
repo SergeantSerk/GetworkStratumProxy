@@ -83,8 +83,13 @@ namespace GetworkStratumProxy.Network
         public string PeekLine()
         {
             using var streamReader = new StreamReader(this, leaveOpen: true);
-            string line = streamReader.ReadLine() + '\n';   // Preserve newline character
-            BufferedLines.Enqueue(line);
+            string line = streamReader.ReadLine();
+
+            if (line != null)
+            {
+                line += '\n';   // Preserve newline character
+                BufferedLines.Enqueue(line);
+            }
 
             return line;
         }
