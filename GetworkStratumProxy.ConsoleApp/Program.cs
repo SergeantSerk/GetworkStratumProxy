@@ -33,10 +33,12 @@ namespace GetworkStratumProxy.ConsoleApp
             };
 
             using (BaseNode pollingNode = new PollingNode(options.RpcUri, options.PollInterval))
-            using (IProxy proxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort))
+            using (IProxy ethProxy = new EthProxy(pollingNode, options.StratumIPAddress, options.StratumPort))
+            using (IProxy nicehashProxy = new NicehashProxy(pollingNode, options.StratumIPAddress, options.StratumPort + 1))
             {
                 pollingNode.Start();
-                proxy.Start();
+                ethProxy.Start();
+                nicehashProxy.Start();
 
                 while (IsRunning)
                 {
