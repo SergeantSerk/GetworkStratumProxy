@@ -44,7 +44,7 @@ namespace GetworkStratumProxy.Node
             if (TryUpdateWork(receivedEthWork))
             {
                 ConsoleHelper.Log(GetType().Name, $"Received latest work " +
-                    $"({receivedEthWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
+                    $"({receivedEthWork.Header.HexValue[..EthashUtilities.WorkHeaderCharactersPrefixCount]}...) from polled node", LogLevel.Debug);
                 NewWorkReceived?.Invoke(this, LatestEthWork);
             }
         }

@@ -53,7 +53,7 @@ namespace GetworkStratumProxy.Proxy.Client
                 CurrentEthWork = newEthWork;
                 var ethWorkNotification = new Rpc.EthProxy.NewEthWorkNotification(newEthWork);
                 ConsoleHelper.Log(GetType().Name, $"Sending work " +
-                    $"({newEthWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
+                    $"({newEthWork.Header.HexValue[..EthashUtilities.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
 
                 try
                 {
@@ -99,7 +99,7 @@ namespace GetworkStratumProxy.Proxy.Client
             CurrentEthWork = ethWork;
 
             ConsoleHelper.Log(GetType().Name, $"Sending latest work " +
-                $"({ethWork.Header.HexValue[..Constants.WorkHeaderCharactersPrefixCount]}...) for {Endpoint}", LogLevel.Information);
+                $"({ethWork.Header.HexValue[..EthashUtilities.WorkHeaderCharactersPrefixCount]}...) for {Endpoint}", LogLevel.Information);
 
             ConsoleHelper.Log(GetType().Name, $"Sending work to {Endpoint}", LogLevel.Debug);
             return ethWorkRaw;
