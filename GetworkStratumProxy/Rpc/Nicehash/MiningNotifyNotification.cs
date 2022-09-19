@@ -4,13 +4,13 @@ namespace GetworkStratumProxy.Rpc.Nicehash
 {
     public sealed class MiningNotifyNotification : JsonRpcNotification
     {
-        public MiningNotifyNotification(HexBigInteger jobId, string seedHash, string headerHash, bool clearJobQueue)
+        public MiningNotifyNotification(string jobId, string seedHash, string headerHash, bool clearJobQueue)
         {
             Method = "mining.notify";
 
             Params = new object[]
             {
-                jobId.ToString(),
+                jobId.Replace("0x", ""),
                 new HexBigInteger(seedHash).HexValue.Replace("0x", ""),
                 new HexBigInteger(headerHash).HexValue.Replace("0x", ""),
                 clearJobQueue

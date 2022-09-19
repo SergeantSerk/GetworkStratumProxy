@@ -69,11 +69,12 @@ namespace GetworkStratumProxy.Proxy.Client
                     PreviousDifficulty = difficulty;
                 }
 
-                CurrentJobId = (CurrentJobId.Value++).ToHexBigInteger();
-                var miningNotifyNotification = new MiningNotifyNotification(CurrentJobId, seedHash, headerHash, clearJobQueue);
+                var miningNotifyNotification = new MiningNotifyNotification(CurrentJobId.HexValue, seedHash, headerHash, clearJobQueue);
                 ConsoleHelper.Log(GetType().Name, $"Sending job " +
                     $"({headerHash[..Constants.WorkHeaderCharactersPrefixCount]}...) to {Endpoint}", LogLevel.Information);
                 Notify(miningNotifyNotification);
+
+                CurrentJobId = (CurrentJobId.Value + 1).ToHexBigInteger();
             }
         }
 
